@@ -2,377 +2,547 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>สมุดบัญชี</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  /* ============================================================
-     ขั้นตอนที่ 1: ใส่ URL ของ Web App ที่ได้จาก Google Apps Script
-     ตรงนี้ในแท็ก <script> ด้านล่าง (ค้นหาคำว่า API_URL)
-     ============================================================ */
-
   :root {
-    --paper: #F6F1E6;
-    --paper-line: #E3D9C4;
-    --ink: #2B2620;
-    --ink-soft: #6B6353;
-    --rule: #C9BC9F;
-    --income: #2F6F4E;
-    --expense: #B0473D;
-    --accent: #B0473D;
-    --card: #FFFDF8;
-    --shadow: rgba(43, 38, 32, 0.08);
+    --bg: #11151C;
+    --surface: #1A2029;
+    --surface-2: #20272F;
+    --hairline: #2A3140;
+    --text: #EDEEF0;
+    --text-dim: #8B93A1;
+    --text-faint: #545C6B;
+    --mint: #6EE7B7;
+    --lime: #A3E635;
+    --coral: #FB7185;
+    --coral-dim: #B5555F;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
   }
 
-  * { box-sizing: border-box; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', 'Noto Sans Thai', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overscroll-behavior-y: none;
+  }
 
   body {
-    margin: 0;
-    font-family: 'Noto Sans Thai', 'Segoe UI', sans-serif;
-    background: var(--paper);
-    background-image:
-      repeating-linear-gradient(
-        to bottom,
-        transparent 0px,
-        transparent 35px,
-        var(--paper-line) 35px,
-        var(--paper-line) 36px
-      );
-    color: var(--ink);
     min-height: 100vh;
-    padding: 0;
+    padding-top: var(--safe-top);
   }
 
+  .num { font-family: 'Space Grotesk', 'Inter', sans-serif; font-variant-numeric: tabular-nums; }
+
+  button { font-family: inherit; }
+
+  a:focus-visible, button:focus-visible, [tabindex]:focus-visible, input:focus-visible {
+    outline: 2px solid var(--lime);
+    outline-offset: 2px;
+  }
+
+  /* ================= App shell ================= */
   .app {
-    max-width: 720px;
+    max-width: 480px;
     margin: 0 auto;
-    padding: 28px 20px 80px;
-  }
-
-  /* ---------- Header ---------- */
-  header {
+    min-height: 100vh;
     display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    border-bottom: 3px solid var(--ink);
-    padding-bottom: 14px;
-    margin-bottom: 6px;
-  }
-
-  header h1 {
-    font-family: 'Noto Serif Thai', Georgia, serif;
-    font-size: 28px;
-    font-weight: 700;
-    margin: 0;
-    letter-spacing: 0.5px;
-  }
-
-  header .subtitle {
-    font-size: 12px;
-    color: var(--ink-soft);
-    font-variant-numeric: tabular-nums;
+    flex-direction: column;
+    position: relative;
   }
 
   .setup-banner {
-    background: #FCEFE3;
-    border: 1px solid #E3B98C;
-    border-radius: 6px;
+    margin: 16px 20px 0;
+    background: rgba(251, 113, 133, 0.1);
+    border: 1px solid rgba(251, 113, 133, 0.35);
+    border-radius: 12px;
     padding: 14px 16px;
-    margin: 16px 0;
     font-size: 13px;
     line-height: 1.6;
+    color: var(--text-dim);
     display: none;
   }
   .setup-banner.show { display: block; }
   .setup-banner code {
-    background: rgba(0,0,0,0.06);
-    padding: 1px 5px;
-    border-radius: 3px;
+    background: rgba(255,255,255,0.08);
+    padding: 1px 6px;
+    border-radius: 4px;
     font-size: 12px;
+    color: var(--coral);
   }
 
-  /* ---------- Summary cards ---------- */
-  .summary {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-    margin: 22px 0;
-  }
-  .summary-card {
-    background: var(--card);
-    border: 1px solid var(--rule);
-    border-radius: 8px;
-    padding: 14px 12px;
-    box-shadow: 0 1px 3px var(--shadow);
-  }
-  .summary-card .label {
-    font-size: 11px;
-    color: var(--ink-soft);
-    text-transform: uppercase;
-    letter-spacing: 0.6px;
-    margin-bottom: 6px;
-  }
-  .summary-card .value {
-    font-family: 'Noto Serif Thai', Georgia, serif;
-    font-size: 20px;
-    font-weight: 700;
-    font-variant-numeric: tabular-nums;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .summary-card.income .value { color: var(--income); }
-  .summary-card.expense .value { color: var(--expense); }
-  .summary-card.balance .value { color: var(--ink); }
-
-  /* ---------- Tabs ---------- */
-  .tabs {
-    display: flex;
-    gap: 4px;
-    margin: 20px 0 16px;
-    border-bottom: 1px solid var(--rule);
-  }
-  .tab {
-    padding: 9px 16px;
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--ink-soft);
-    cursor: pointer;
-    border-bottom: 2px solid transparent;
-    user-select: none;
-  }
-  .tab.active {
-    color: var(--ink);
-    border-bottom-color: var(--accent);
-  }
-
-  /* ---------- Buttons ---------- */
-  .btn {
-    font-family: inherit;
-    font-size: 14px;
-    font-weight: 600;
-    border-radius: 6px;
-    padding: 10px 18px;
-    border: none;
-    cursor: pointer;
-    transition: transform 0.06s ease, opacity 0.15s ease;
-  }
-  .btn:active { transform: scale(0.97); }
-  .btn-primary {
-    background: var(--ink);
-    color: var(--paper);
-  }
-  .btn-primary:hover { opacity: 0.85; }
-  .btn-ghost {
-    background: transparent;
-    color: var(--ink-soft);
-    border: 1px solid var(--rule);
-  }
-  .btn-ghost:hover { background: rgba(0,0,0,0.03); }
-  .btn-danger {
-    background: transparent;
-    color: var(--expense);
-  }
-  .fab {
-    position: fixed;
-    bottom: 26px;
-    right: 50%;
-    transform: translateX(360px);
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
-    background: var(--ink);
-    color: var(--paper);
-    font-size: 28px;
-    line-height: 1;
+  .loading-spin {
+    flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 4px 12px var(--shadow);
-    border: none;
-    cursor: pointer;
+    color: var(--text-faint);
+    font-size: 13px;
+    gap: 10px;
   }
-  @media (max-width: 760px) {
-    .fab { right: 20px; transform: none; }
+  .loading-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--lime);
+    animation: pulse-dot 1.2s ease-in-out infinite;
+  }
+  .loading-dot:nth-child(2) { animation-delay: 0.15s; }
+  .loading-dot:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes pulse-dot { 0%, 80%, 100% { opacity: 0.25; } 40% { opacity: 1; } }
+
+  /* ================= Top bar ================= */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 22px 20px 0;
+  }
+  .topbar .brand {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+    color: var(--text-dim);
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .topbar .brand .glyph {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--mint), var(--lime));
+  }
+  .topbar .date {
+    font-size: 12px;
+    color: var(--text-faint);
+  }
+
+  /* ================= Balance hero ================= */
+  .hero {
+    padding: 18px 20px 8px;
+  }
+  .hero .label {
+    font-size: 12px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+  }
+  .hero .balance {
+    font-size: 44px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.5px;
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+  }
+  .hero .balance .currency {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-dim);
+  }
+
+  .pulse-wrap {
+    margin-top: 14px;
+    height: 46px;
+    position: relative;
+  }
+  .pulse-wrap svg { width: 100%; height: 100%; display: block; overflow: visible; }
+  .pulse-line {
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .pulse-dot-end {
+    filter: drop-shadow(0 0 6px currentColor);
+  }
+
+  .hero-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 18px;
+  }
+  .hero-stat {
+    background: var(--surface);
+    border: 1px solid var(--hairline);
+    border-radius: 14px;
+    padding: 12px 14px;
+  }
+  .hero-stat .hs-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-bottom: 5px;
+  }
+  .hero-stat .hs-dot { width: 6px; height: 6px; border-radius: 50%; }
+  .hero-stat.income .hs-dot { background: var(--lime); }
+  .hero-stat.expense .hs-dot { background: var(--coral); }
+  .hero-stat .hs-value {
+    font-size: 19px;
+    font-weight: 700;
+  }
+  .hero-stat.income .hs-value { color: var(--lime); }
+  .hero-stat.expense .hs-value { color: var(--coral); }
+
+  /* ================= Month nav ================= */
+  .month-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    padding: 22px 20px 4px;
+  }
+  .month-nav button {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    border: 1px solid var(--hairline);
+    background: var(--surface);
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s, color 0.15s;
+  }
+  .month-nav button:hover { background: var(--surface-2); color: var(--text); }
+  .month-nav .month-label {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    min-width: 130px;
+    text-align: center;
+  }
+
+  /* ================= Segmented view switch ================= */
+  .view-switch {
+    display: flex;
+    background: var(--surface);
+    border: 1px solid var(--hairline);
+    border-radius: 11px;
+    padding: 3px;
+    margin: 16px 20px 4px;
+  }
+  .view-switch button {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.18s, color 0.18s;
+  }
+  .view-switch button.active {
+    background: var(--surface-2);
+    color: var(--text);
+  }
+
+  /* ================= Content area ================= */
+  .content {
+    flex: 1;
+    padding: 12px 20px 110px;
   }
 
   /* ---------- Transaction list ---------- */
+  .day-group { margin-bottom: 4px; }
+  .day-heading {
+    font-size: 12px;
+    color: var(--text-faint);
+    padding: 14px 2px 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
   .tx-list { list-style: none; padding: 0; margin: 0; }
   .tx-item {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 12px 4px;
-    border-bottom: 1px solid var(--paper-line);
+    padding: 11px 2px;
     cursor: pointer;
+    border-radius: 12px;
+    transition: background 0.12s;
   }
-  .tx-item:hover { background: rgba(0,0,0,0.02); }
-  .tx-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
+  .tx-item:hover { background: var(--surface); }
+  .tx-icon {
+    width: 38px; height: 38px;
+    border-radius: 11px;
     flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    filter: drop-shadow(0 1px 1px rgba(0,0,0,0.25));
   }
   .tx-main { flex: 1; min-width: 0; }
-  .tx-cat { font-size: 14px; font-weight: 600; }
-  .tx-note { font-size: 12px; color: var(--ink-soft); margin-top: 1px; }
-  .tx-date { font-size: 11px; color: var(--ink-soft); white-space: nowrap; }
+  .tx-cat { font-size: 14px; font-weight: 600; color: var(--text); }
+  .tx-note { font-size: 12px; color: var(--text-dim); margin-top: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .tx-amount {
-    font-family: 'Noto Serif Thai', Georgia, serif;
     font-size: 15px;
     font-weight: 700;
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
   }
-  .tx-amount.income { color: var(--income); }
-  .tx-amount.expense { color: var(--expense); }
+  .tx-amount.income { color: var(--lime); }
+  .tx-amount.expense { color: var(--text); }
 
   .empty-state {
     text-align: center;
-    padding: 50px 20px;
-    color: var(--ink-soft);
+    padding: 70px 20px;
+    color: var(--text-faint);
   }
-  .empty-state .glyph { font-size: 32px; margin-bottom: 10px; }
+  .empty-state .glyph {
+    font-size: 30px;
+    margin-bottom: 12px;
+    opacity: 0.5;
+  }
+  .empty-state .sub { font-size: 13px; margin-top: 4px; }
 
-  /* ---------- Month nav ---------- */
-  .month-nav {
+  /* ---------- Chart view ---------- */
+  .chart-wrap { padding-top: 6px; }
+  .chart-empty { text-align: center; padding: 60px 20px; color: var(--text-faint); }
+  .bar-row {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    gap: 12px;
     margin-bottom: 14px;
   }
-  .month-nav .month-label {
-    font-family: 'Noto Serif Thai', Georgia, serif;
-    font-size: 16px;
-    font-weight: 700;
+  .bar-row .bar-icon {
+    width: 30px; height: 30px;
+    border-radius: 9px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
   }
-  .month-nav button {
-    background: none;
-    border: 1px solid var(--rule);
-    border-radius: 6px;
-    width: 32px;
-    height: 32px;
-    cursor: pointer;
-    font-size: 14px;
-    color: var(--ink);
+  .bar-row .bar-main { flex: 1; min-width: 0; }
+  .bar-row .bar-top {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    margin-bottom: 5px;
   }
+  .bar-row .bar-name { font-weight: 600; color: var(--text); }
+  .bar-row .bar-amt { font-variant-numeric: tabular-nums; color: var(--text-dim); }
+  .bar-track { background: var(--surface); border-radius: 5px; height: 7px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 5px; transition: width 0.4s ease; }
 
-  /* ---------- Categories grid (manage tab) ---------- */
+  /* ---------- Categories view ---------- */
   .cat-section-title {
     font-size: 12px;
-    color: var(--ink-soft);
+    color: var(--text-faint);
     text-transform: uppercase;
     letter-spacing: 0.6px;
-    margin: 18px 0 10px;
+    margin: 18px 2px 10px;
   }
   .cat-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    grid-template-columns: repeat(2, 1fr);
     gap: 8px;
   }
   .cat-chip {
     display: flex;
     align-items: center;
-    gap: 8px;
-    background: var(--card);
-    border: 1px solid var(--rule);
-    border-radius: 7px;
-    padding: 9px 10px;
+    gap: 10px;
+    background: var(--surface);
+    border: 1px solid var(--hairline);
+    border-radius: 13px;
+    padding: 11px 12px;
     font-size: 13px;
     cursor: pointer;
+    transition: background 0.12s;
   }
+  .cat-chip:hover { background: var(--surface-2); }
   .cat-chip .dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
-  .cat-chip span.name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cat-chip span.name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); font-weight: 500; }
 
   .add-cat-chip {
-    display: flex; align-items: center; justify-content: center;
-    border: 1px dashed var(--rule);
-    border-radius: 7px;
-    padding: 9px 10px;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    border: 1px dashed var(--hairline);
+    border-radius: 13px;
+    padding: 11px 12px;
     font-size: 13px;
-    color: var(--ink-soft);
+    color: var(--text-dim);
     cursor: pointer;
     background: transparent;
+    transition: border-color 0.12s, color 0.12s;
   }
+  .add-cat-chip:hover { border-color: var(--text-dim); color: var(--text); }
 
-  /* ---------- Chart (monthly by category) ---------- */
-  .chart-wrap { margin-top: 6px; }
-  .bar-row {
+  /* ================= Bottom nav ================= */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    display: flex;
+    justify-content: center;
+    padding: 0 0 calc(14px + var(--safe-bottom));
+    pointer-events: none;
+    z-index: 40;
+  }
+  .bottom-nav-inner {
+    pointer-events: auto;
+    max-width: 440px;
+    width: calc(100% - 32px);
+    background: rgba(26, 32, 41, 0.88);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    border: 1px solid var(--hairline);
+    border-radius: 20px;
     display: flex;
     align-items: center;
-    gap: 10px;
-    margin-bottom: 9px;
-    font-size: 12px;
+    padding: 7px;
+    gap: 4px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.35);
   }
-  .bar-label { width: 90px; flex-shrink: 0; color: var(--ink-soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .bar-track { flex: 1; background: var(--paper-line); border-radius: 4px; height: 14px; overflow: hidden; }
-  .bar-fill { height: 100%; border-radius: 4px; }
-  .bar-value { width: 90px; text-align: right; font-variant-numeric: tabular-nums; flex-shrink: 0; }
+  .nav-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    background: transparent;
+    border: none;
+    color: var(--text-faint);
+    cursor: pointer;
+    padding: 8px 4px;
+    border-radius: 14px;
+    transition: color 0.15s, background 0.15s;
+  }
+  .nav-btn .nav-icon { font-size: 18px; line-height: 1; }
+  .nav-btn .nav-text { font-size: 10.5px; font-weight: 600; }
+  .nav-btn.active { color: var(--text); background: var(--surface-2); }
 
-  /* ---------- Modal ---------- */
+  .nav-fab {
+    width: 52px; height: 52px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, var(--mint), var(--lime));
+    color: #0E1410;
+    border: none;
+    font-size: 26px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    margin: 0 2px;
+    box-shadow: 0 4px 16px rgba(163, 230, 53, 0.35);
+    transition: transform 0.1s ease;
+  }
+  .nav-fab:active { transform: scale(0.92); }
+
+  /* ================= Modal / Sheet ================= */
   .overlay {
     position: fixed; inset: 0;
-    background: rgba(43,38,32,0.45);
+    background: rgba(8, 10, 14, 0.6);
+    backdrop-filter: blur(2px);
     display: none;
     align-items: flex-end;
     justify-content: center;
-    z-index: 50;
+    z-index: 60;
   }
   .overlay.show { display: flex; }
   @media (min-width: 600px) {
     .overlay { align-items: center; }
   }
-  .modal {
-    background: var(--paper);
+  .sheet {
+    background: var(--surface);
+    border: 1px solid var(--hairline);
     width: 100%;
     max-width: 480px;
-    border-radius: 16px 16px 0 0;
-    padding: 24px 22px 28px;
-    max-height: 88vh;
+    border-radius: 22px 22px 0 0;
+    padding: 10px 20px calc(24px + var(--safe-bottom));
+    max-height: 90vh;
     overflow-y: auto;
+    animation: sheet-in 0.22s cubic-bezier(0.16, 1, 0.3, 1);
   }
   @media (min-width: 600px) {
-    .modal { border-radius: 14px; }
+    .sheet { border-radius: 18px; padding: 22px 24px 26px; }
   }
-  .modal h2 {
-    font-family: 'Noto Serif Thai', Georgia, serif;
-    font-size: 19px;
+  @keyframes sheet-in {
+    from { transform: translateY(24px); opacity: 0.4; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  .sheet-handle {
+    width: 36px; height: 4px;
+    background: var(--hairline);
+    border-radius: 3px;
+    margin: 6px auto 14px;
+  }
+  @media (min-width: 600px) { .sheet-handle { display: none; } }
+
+  .sheet h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 18px;
+    font-weight: 600;
     margin: 0 0 18px;
+    color: var(--text);
   }
   .field { margin-bottom: 14px; }
   .field label {
     display: block;
     font-size: 12px;
-    color: var(--ink-soft);
-    margin-bottom: 5px;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
   }
   .field input, .field select, .field textarea {
     width: 100%;
-    font-family: inherit;
-    font-size: 15px;
-    padding: 10px 11px;
-    border: 1px solid var(--rule);
-    border-radius: 7px;
-    background: var(--card);
-    color: var(--ink);
+    font-family: 'Inter', 'Noto Sans Thai', sans-serif;
+    font-size: 16px;
+    padding: 12px 13px;
+    border: 1px solid var(--hairline);
+    border-radius: 11px;
+    background: var(--bg);
+    color: var(--text);
   }
-  .field input:focus, .field select:focus, .field textarea:focus {
-    outline: 2px solid var(--ink);
-    outline-offset: 1px;
+  .field input::placeholder { color: var(--text-faint); }
+  .field input:focus, .field select:focus {
+    outline: none;
+    border-color: var(--lime);
   }
+
+  .amount-field input {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 26px;
+    font-weight: 700;
+    padding: 14px 13px;
+  }
+
   .type-toggle { display: flex; gap: 8px; }
   .type-toggle button {
     flex: 1;
-    padding: 10px;
-    border-radius: 7px;
-    border: 1px solid var(--rule);
-    background: var(--card);
+    padding: 11px;
+    border-radius: 11px;
+    border: 1px solid var(--hairline);
+    background: var(--bg);
     font-weight: 600;
     font-size: 14px;
     cursor: pointer;
-    color: var(--ink-soft);
+    color: var(--text-dim);
+    transition: all 0.15s;
   }
-  .type-toggle button.active.expense { background: var(--expense); color: white; border-color: var(--expense); }
-  .type-toggle button.active.income { background: var(--income); color: white; border-color: var(--income); }
+  .type-toggle button.active.expense { background: rgba(251, 113, 133, 0.14); color: var(--coral); border-color: var(--coral-dim); }
+  .type-toggle button.active.income { background: rgba(163, 230, 53, 0.14); color: var(--lime); border-color: var(--lime); }
 
   .cat-picker {
     display: flex;
@@ -383,93 +553,159 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    border: 1px solid var(--rule);
+    border: 1px solid var(--hairline);
     border-radius: 999px;
-    padding: 7px 13px;
+    padding: 8px 14px;
     font-size: 13px;
     cursor: pointer;
-    background: var(--card);
+    background: var(--bg);
+    color: var(--text-dim);
+    transition: all 0.15s;
   }
   .cat-picker .pick.selected {
-    border-color: var(--ink);
-    background: var(--ink);
-    color: var(--paper);
+    border-color: var(--text);
+    background: var(--surface-2);
+    color: var(--text);
   }
   .cat-picker .pick .dot { width: 9px; height: 9px; border-radius: 50%; }
 
   .modal-actions {
     display: flex;
     gap: 10px;
-    margin-top: 20px;
+    margin-top: 22px;
   }
-  .modal-actions .btn { flex: 1; }
+  .btn {
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 12px;
+    padding: 13px 18px;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.06s ease, opacity 0.15s ease;
+    flex: 1;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--mint), var(--lime));
+    color: #0E1410;
+  }
+  .btn-primary:disabled { opacity: 0.6; }
+  .btn-ghost {
+    background: var(--bg);
+    color: var(--text-dim);
+    border: 1px solid var(--hairline);
+  }
+  .btn-danger {
+    background: transparent;
+    color: var(--coral);
+    flex: 0 0 auto;
+  }
 
-  .swatches { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+  .icon-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .icon-pick {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    border-radius: 10px;
+    border: 1px solid var(--hairline);
+    background: var(--bg);
+    cursor: pointer;
+    transition: all 0.12s;
+  }
+  .icon-pick:hover { background: var(--surface-2); }
+  .icon-pick.selected {
+    border-color: var(--lime);
+    background: rgba(163, 230, 53, 0.12);
+  }
+  #catIconCustom {
+    font-size: 18px !important;
+    text-align: center;
+  }
+
+  .swatches { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 4px; }
   .swatch {
-    width: 28px; height: 28px;
+    width: 30px; height: 30px;
     border-radius: 50%;
     cursor: pointer;
     border: 2px solid transparent;
+    position: relative;
   }
-  .swatch.selected { border-color: var(--ink); }
+  .swatch.selected::after {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border: 2px solid var(--text);
+    border-radius: 50%;
+  }
 
   .toast {
     position: fixed;
-    bottom: 24px;
+    bottom: calc(96px + var(--safe-bottom));
     left: 50%;
-    transform: translateX(-50%);
-    background: var(--ink);
-    color: var(--paper);
-    padding: 10px 18px;
-    border-radius: 8px;
+    transform: translateX(-50%) translateY(8px);
+    background: var(--surface-2);
+    border: 1px solid var(--hairline);
+    color: var(--text);
+    padding: 11px 18px;
+    border-radius: 11px;
     font-size: 13px;
+    font-weight: 500;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.25s ease;
+    transition: opacity 0.25s ease, transform 0.25s ease;
     z-index: 100;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
   }
-  .toast.show { opacity: 1; }
-
-  .loading-spin {
-    text-align: center;
-    padding: 60px 0;
-    color: var(--ink-soft);
-    font-size: 13px;
-  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
   .hidden { display: none !important; }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+  }
 </style>
 </head>
 <body>
 
 <div class="app">
-  <header>
-    <h1>สมุดบัญชี</h1>
-    <div class="subtitle" id="todayLabel"></div>
-  </header>
 
   <div class="setup-banner" id="setupBanner">
-    ⚠️ ยังไม่ได้เชื่อมต่อกับ Google Sheets — เปิดไฟล์นี้ด้วยโปรแกรมแก้ไขข้อความ
-    แล้วค้นหาคำว่า <code>API_URL</code> ใส่ URL ของ Web App ที่ได้จาก Google Apps Script ลงไป
-    (ดูขั้นตอนการติดตั้งในคำอธิบายที่แชทให้ไว้)
+    ยังไม่ได้เชื่อมต่อกับ Google Sheets — เปิดไฟล์นี้ด้วยโปรแกรมแก้ไขข้อความ แล้วค้นหาคำว่า
+    <code>API_URL</code> ใส่ URL ของ Web App ที่ได้จาก Google Apps Script ลงไป
   </div>
 
-  <div id="loadingState" class="loading-spin">กำลังโหลดข้อมูล…</div>
+  <div id="loadingState" class="loading-spin">
+    <div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div>
+  </div>
 
   <div id="mainContent" class="hidden">
 
-    <div class="summary">
-      <div class="summary-card income">
-        <div class="label">รายรับ</div>
-        <div class="value" id="sumIncome">0</div>
-      </div>
-      <div class="summary-card expense">
-        <div class="label">รายจ่าย</div>
-        <div class="value" id="sumExpense">0</div>
-      </div>
-      <div class="summary-card balance">
-        <div class="label">คงเหลือ</div>
-        <div class="value" id="sumBalance">0</div>
+    <div class="topbar">
+      <div class="brand"><span class="glyph"></span>Ledger</div>
+      <div class="date" id="todayLabel"></div>
+    </div>
+
+    <div class="hero">
+      <div class="label">คงเหลือเดือนนี้</div>
+      <div class="balance"><span class="currency">฿</span><span class="num" id="sumBalance">0</span></div>
+      <div class="pulse-wrap" id="pulseWrap"></div>
+      <div class="hero-stats">
+        <div class="hero-stat income">
+          <div class="hs-label"><span class="hs-dot"></span>รายรับ</div>
+          <div class="hs-value num" id="sumIncome">0</div>
+        </div>
+        <div class="hero-stat expense">
+          <div class="hs-label"><span class="hs-dot"></span>รายจ่าย</div>
+          <div class="hs-value num" id="sumExpense">0</div>
+        </div>
       </div>
     </div>
 
@@ -479,39 +715,54 @@
       <button id="nextMonth" aria-label="เดือนถัดไป">›</button>
     </div>
 
-    <div class="tabs">
-      <div class="tab active" data-tab="list">รายการ</div>
-      <div class="tab" data-tab="chart">กราฟ</div>
-      <div class="tab" data-tab="categories">หมวดหมู่</div>
+    <div class="view-switch">
+      <button class="active" data-view="list">รายการ</button>
+      <button data-view="chart">กราฟ</button>
+      <button data-view="categories">หมวดหมู่</button>
     </div>
 
-    <div id="tab-list">
-      <ul class="tx-list" id="txList"></ul>
-      <div class="empty-state hidden" id="emptyState">
-        <div class="glyph">🗒️</div>
-        <div>ยังไม่มีรายการในเดือนนี้</div>
+    <div class="content">
+      <div id="view-list">
+        <div id="txGroups"></div>
+        <div class="empty-state hidden" id="emptyState">
+          <div class="glyph">○</div>
+          <div>ยังไม่มีรายการในเดือนนี้</div>
+          <div class="sub">กดปุ่ม + ด้านล่างเพื่อเริ่มบันทึก</div>
+        </div>
       </div>
-    </div>
 
-    <div id="tab-chart" class="hidden">
-      <div class="chart-wrap" id="chartWrap"></div>
-    </div>
+      <div id="view-chart" class="hidden">
+        <div class="chart-wrap" id="chartWrap"></div>
+      </div>
 
-    <div id="tab-categories" class="hidden">
-      <div class="cat-section-title">หมวดหมู่รายจ่าย</div>
-      <div class="cat-grid" id="catGridExpense"></div>
-      <div class="cat-section-title">หมวดหมู่รายรับ</div>
-      <div class="cat-grid" id="catGridIncome"></div>
+      <div id="view-categories" class="hidden">
+        <div class="cat-section-title">หมวดหมู่รายจ่าย</div>
+        <div class="cat-grid" id="catGridExpense"></div>
+        <div class="cat-section-title">หมวดหมู่รายรับ</div>
+        <div class="cat-grid" id="catGridIncome"></div>
+      </div>
     </div>
 
   </div>
 
-  <button class="fab" id="fabAdd" aria-label="เพิ่มรายการ">+</button>
+  <div class="bottom-nav">
+    <div class="bottom-nav-inner" id="bottomNavInner">
+      <button class="nav-btn active" data-view="list">
+        <span class="nav-icon">☰</span><span class="nav-text">รายการ</span>
+      </button>
+      <button class="nav-fab" id="fabAdd" aria-label="เพิ่มรายการ">+</button>
+      <button class="nav-btn" data-view="chart">
+        <span class="nav-icon">▤</span><span class="nav-text">กราฟ</span>
+      </button>
+    </div>
+  </div>
+
 </div>
 
-<!-- Transaction modal -->
+<!-- Transaction sheet -->
 <div class="overlay" id="txOverlay">
-  <div class="modal">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
     <h2 id="txModalTitle">เพิ่มรายการ</h2>
     <div class="field">
       <div class="type-toggle">
@@ -531,21 +782,22 @@
       <label for="txDate">วันที่</label>
       <input type="date" id="txDate">
     </div>
-    <div class="field">
+    <div class="field amount-field">
       <label for="txAmount">จำนวนเงิน (บาท)</label>
       <input type="text" id="txAmount" inputmode="decimal" placeholder="0.00">
     </div>
     <div class="modal-actions">
+      <button class="btn btn-danger hidden" id="txDeleteBtn">ลบ</button>
       <button class="btn btn-ghost" id="txCancelBtn">ยกเลิก</button>
-      <button class="btn btn-ghost btn-danger hidden" id="txDeleteBtn">ลบรายการ</button>
       <button class="btn btn-primary" id="txSaveBtn">บันทึก</button>
     </div>
   </div>
 </div>
 
-<!-- Category modal -->
+<!-- Category sheet -->
 <div class="overlay" id="catOverlay">
-  <div class="modal">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
     <h2 id="catModalTitle">เพิ่มหมวดหมู่</h2>
     <div class="field">
       <div class="type-toggle">
@@ -558,12 +810,17 @@
       <input type="text" id="catName" placeholder="เช่น ค่าเช่าบ้าน">
     </div>
     <div class="field">
+      <label>ไอคอน</label>
+      <div class="icon-grid" id="catIconGrid"></div>
+      <input type="text" id="catIconCustom" placeholder="หรือพิมพ์ emoji เอง เช่น 🏠" maxlength="4">
+    </div>
+    <div class="field">
       <label>เลือกสี</label>
       <div class="swatches" id="catSwatches"></div>
     </div>
     <div class="modal-actions">
+      <button class="btn btn-danger hidden" id="catDeleteBtn">ลบ</button>
       <button class="btn btn-ghost" id="catCancelBtn">ยกเลิก</button>
-      <button class="btn btn-ghost btn-danger hidden" id="catDeleteBtn">ลบหมวดหมู่</button>
       <button class="btn btn-primary" id="catSaveBtn">บันทึก</button>
     </div>
   </div>
@@ -574,25 +831,34 @@
 <script>
 /* =========================================================================
    ตั้งค่า: ใส่ URL ของ Google Apps Script Web App ที่นี่
-   (ได้จากตอน Deploy > New deployment ใน Apps Script)
    ========================================================================= */
 const API_URL = 'https://script.google.com/macros/s/AKfycbxPnOMdH8TwMbCSvxwTo3UaWYJc1DI9FaxNdMLzo_enZcfgloUFS8wk06D3H5b7fXN9/exec';
 /* ========================================================================= */
 
-const SWATCH_COLORS = ['#E07A5F', '#3D8B7D', '#6B5CA5', '#D4A24C', '#C2598B',
-                        '#8A8A8A', '#2F6F4E', '#5B8A72', '#4F6D9A', '#A8553D'];
+const SWATCH_COLORS = ['#FB7185', '#6EE7B7', '#A3E635', '#60A5FA', '#C084FC',
+                        '#FBBF24', '#F472B6', '#34D399', '#94A3B8', '#FB923C'];
+
+// ชุดไอคอนให้เลือกตอนสร้าง/แก้ไขหมวดหมู่ (ครอบคลุมหมวดหมู่ที่ใช้บ่อย)
+const ICON_CHOICES = [
+  '🍜', '☕', '🍔', '🛒', '🚌', '🚗', '⛽', '✈️',
+  '🏠', '🧾', '💡', '📱', '🛍️', '👗', '💊', '🏥',
+  '🎬', '🎮', '📚', '🎓', '🐾', '🎁', '💰', '💼',
+  '📈', '🏦', '✦', '🧸', '🍺', '🏋️',
+];
+function iconFor(cat) { return (cat && cat.icon) || '✦'; }
 
 let state = {
   transactions: [],
   categories: [],
   currentMonth: new Date(),
-  activeTab: 'list',
+  activeView: 'list',
   editingTxId: null,
   txType: 'expense',
   selectedCatId: null,
   editingCatId: null,
   catType: 'expense',
   selectedColor: SWATCH_COLORS[0],
+  selectedIcon: ICON_CHOICES[0],
 };
 
 const $ = (sel) => document.querySelector(sel);
@@ -608,8 +874,6 @@ function todayISO() {
   const d = new Date();
   return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
 }
-
-// แปลงข้อความตัวเลขดิบให้มี comma แยกหลักพัน เช่น "1500.5" -> "1,500.5"
 function formatAmountInput(raw) {
   let val = raw.replace(/[^\d.]/g, '');
   const firstDot = val.indexOf('.');
@@ -625,7 +889,8 @@ function showToast(msg) {
   const t = $('#toast');
   t.textContent = msg;
   t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2200);
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 2200);
 }
 
 /* ---------------- API layer ---------------- */
@@ -633,8 +898,6 @@ function apiCall(action, payload) {
   const params = new URLSearchParams();
   params.set('action', action);
   if (payload) params.set('payload', JSON.stringify(payload));
-  // GET is used for everything (including writes) to avoid CORS preflight issues
-  // with Apps Script web apps, which don't support OPTIONS by default.
   return fetch(API_URL + '?' + params.toString())
     .then(r => r.json())
     .then(res => {
@@ -652,7 +915,7 @@ function loadAll() {
 
 /* ---------------- Init ---------------- */
 function init() {
-  $('#todayLabel').textContent = new Date().toLocaleDateString('th-TH', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  $('#todayLabel').textContent = new Date().toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
 
   if (!API_URL || API_URL === 'PASTE_YOUR_WEB_APP_URL_HERE') {
     $('#setupBanner').classList.add('show');
@@ -665,17 +928,17 @@ function init() {
     $('#mainContent').classList.remove('hidden');
     render();
   }).catch(err => {
-    $('#loadingState').textContent = 'โหลดข้อมูลไม่สำเร็จ: ' + err.message;
+    $('#loadingState').innerHTML = '<div style="text-align:center;padding:0 24px">โหลดข้อมูลไม่สำเร็จ<br><span style="color:var(--text-faint);font-size:12px">' + escapeHtml(err.message) + '</span></div>';
   });
 }
 
 /* ---------------- Render ---------------- */
 function render() {
   $('#monthLabel').textContent = fmtMonthLabel(state.currentMonth);
-  renderSummary();
-  if (state.activeTab === 'list') renderList();
-  if (state.activeTab === 'chart') renderChart();
-  if (state.activeTab === 'categories') renderCategories();
+  renderHero();
+  if (state.activeView === 'list') renderList();
+  if (state.activeView === 'chart') renderChart();
+  if (state.activeView === 'categories') renderCategories();
 }
 
 function txInCurrentMonth() {
@@ -691,7 +954,7 @@ function catById(id) {
   return state.categories.find(c => c.id === id);
 }
 
-function renderSummary() {
+function renderHero() {
   const txs = txInCurrentMonth();
   let income = 0, expense = 0;
   txs.forEach(t => {
@@ -701,34 +964,116 @@ function renderSummary() {
   $('#sumIncome').textContent = '+' + fmtMoney(income);
   $('#sumExpense').textContent = '-' + fmtMoney(expense);
   $('#sumBalance').textContent = fmtMoney(income - expense);
+  renderPulse();
+}
+
+// เส้นชีพจร: ยอดสุทธิสะสมรายวันของ 14 วันล่าสุด (รวมทุกเดือน ไม่ใช่แค่เดือนที่เลือกดู)
+function renderPulse() {
+  const wrap = $('#pulseWrap');
+  const days = 14;
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const points = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const iso = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    const dayTotal = state.transactions
+      .filter(t => t.date === iso)
+      .reduce((sum, t) => sum + (t.type === 'income' ? t.amount : -t.amount), 0);
+    points.push(dayTotal);
+  }
+  // สะสม (cumulative) เพื่อให้เห็นแนวโน้ม ไม่ใช่แค่ขึ้นๆลงๆรายวัน
+  let running = 0;
+  const cum = points.map(p => (running += p));
+
+  const w = 400, h = 46, pad = 4;
+  const min = Math.min(...cum, 0);
+  const max = Math.max(...cum, 0);
+  const range = (max - min) || 1;
+  const stepX = (w - pad * 2) / (cum.length - 1);
+  const coords = cum.map((v, i) => {
+    const x = pad + i * stepX;
+    const y = h - pad - ((v - min) / range) * (h - pad * 2);
+    return [x, y];
+  });
+  const pathD = coords.map((c, i) => (i === 0 ? 'M' : 'L') + c[0].toFixed(1) + ',' + c[1].toFixed(1)).join(' ');
+  const last = cum[cum.length - 1];
+  const lineColor = last >= 0 ? 'var(--lime)' : 'var(--coral)';
+  const endPoint = coords[coords.length - 1];
+
+  wrap.innerHTML = `
+    <svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="pulseFade" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="${lineColor}" stop-opacity="0.15"/>
+          <stop offset="100%" stop-color="${lineColor}" stop-opacity="1"/>
+        </linearGradient>
+      </defs>
+      <path d="${pathD}" class="pulse-line" stroke="url(#pulseFade)"/>
+      <circle cx="${endPoint[0]}" cy="${endPoint[1]}" r="3.5" fill="${lineColor}" class="pulse-dot-end" style="color:${lineColor}"/>
+    </svg>
+  `;
+}
+
+function groupByDay(txs) {
+  const groups = {};
+  txs.forEach(t => {
+    if (!groups[t.date]) groups[t.date] = [];
+    groups[t.date].push(t);
+  });
+  return Object.entries(groups).sort((a,b) => b[0].localeCompare(a[0]));
+}
+
+function dayHeadingLabel(iso) {
+  const d = new Date(iso + 'T00:00:00');
+  const today = new Date(); today.setHours(0,0,0,0);
+  const yest = new Date(today); yest.setDate(yest.getDate() - 1);
+  if (d.getTime() === today.getTime()) return 'วันนี้';
+  if (d.getTime() === yest.getTime()) return 'เมื่อวาน';
+  return d.toLocaleDateString('th-TH', { weekday: 'short', day: 'numeric', month: 'short' });
 }
 
 function renderList() {
-  const txs = txInCurrentMonth().slice().sort((a,b) => b.date.localeCompare(a.date) || b.createdAt?.localeCompare?.(a.createdAt||'') || 0);
-  const list = $('#txList');
-  list.innerHTML = '';
+  const txs = txInCurrentMonth();
+  const container = $('#txGroups');
+  container.innerHTML = '';
   $('#emptyState').classList.toggle('hidden', txs.length > 0);
+  if (!txs.length) return;
 
-  txs.forEach(t => {
-    const cat = catById(t.category) || { name: 'ไม่ทราบหมวดหมู่', color: '#999' };
-    const li = document.createElement('li');
-    li.className = 'tx-item';
-    const dateObj = new Date(t.date + 'T00:00:00');
-    const dateStr = dateObj.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
-    li.innerHTML = `
-      <div class="tx-dot" style="background:${cat.color}"></div>
-      <div class="tx-main">
-        <div class="tx-cat">${escapeHtml(cat.name)}</div>
-        ${t.note ? `<div class="tx-note">${escapeHtml(t.note)}</div>` : ''}
-      </div>
-      <div style="text-align:right">
-        <div class="tx-amount ${t.type}">${t.type === 'income' ? '+' : '-'}${fmtMoney(t.amount)}</div>
-        <div class="tx-date">${dateStr}</div>
-      </div>
-    `;
-    li.addEventListener('click', () => openTxModal(t));
-    list.appendChild(li);
+  const grouped = groupByDay(txs);
+  grouped.forEach(([dateIso, items]) => {
+    items.sort((a,b) => (b.createdAt||'').localeCompare(a.createdAt||''));
+    const group = document.createElement('div');
+    group.className = 'day-group';
+    const dayNet = items.reduce((s,t) => s + (t.type==='income'?t.amount:-t.amount), 0);
+    group.innerHTML = `<div class="day-heading">${dayHeadingLabel(dateIso)}</div>`;
+    const ul = document.createElement('ul');
+    ul.className = 'tx-list';
+    items.forEach(t => {
+      const cat = catById(t.category) || { name: 'ไม่ทราบหมวดหมู่', color: '#666' };
+      const li = document.createElement('li');
+      li.className = 'tx-item';
+      li.innerHTML = `
+        <div class="tx-icon" style="background:${cat.color}">${iconFor(cat)}</div>
+        <div class="tx-main">
+          <div class="tx-cat">${escapeHtml(t.note || cat.name)}</div>
+          <div class="tx-note">${escapeHtml(cat.name)}</div>
+        </div>
+        <div class="tx-amount ${t.type}">${t.type === 'income' ? '+' : '−'}${fmtMoney(t.amount)}</div>
+      `;
+      li.addEventListener('click', () => openTxModal(t));
+      ul.appendChild(li);
+    });
+    group.appendChild(ul);
+    container.appendChild(group);
   });
+}
+
+function hexToRgba(hex, alpha) {
+  const h = hex.replace('#','');
+  const r = parseInt(h.substring(0,2),16), g = parseInt(h.substring(2,4),16), b = parseInt(h.substring(4,6),16);
+  return `rgba(${r},${g},${b},${alpha})`;
 }
 
 function renderChart() {
@@ -740,17 +1085,22 @@ function renderChart() {
 
   const wrap = $('#chartWrap');
   if (!entries.length) {
-    wrap.innerHTML = '<div class="empty-state"><div class="glyph">📊</div>ยังไม่มีรายจ่ายในเดือนนี้</div>';
+    wrap.innerHTML = '<div class="chart-empty"><div class="glyph" style="font-size:30px;opacity:0.5;margin-bottom:10px">▤</div>ยังไม่มีรายจ่ายในเดือนนี้</div>';
     return;
   }
   wrap.innerHTML = entries.map(([catId, amount]) => {
-    const cat = catById(catId) || { name: 'ไม่ทราบหมวดหมู่', color: '#999' };
+    const cat = catById(catId) || { name: 'ไม่ทราบหมวดหมู่', color: '#666' };
     const pct = Math.max(4, (amount / max) * 100);
     return `
       <div class="bar-row">
-        <div class="bar-label">${escapeHtml(cat.name)}</div>
-        <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${cat.color}"></div></div>
-        <div class="bar-value">${fmtMoney(amount)}</div>
+        <div class="bar-icon" style="background:${hexToRgba(cat.color,0.16)}">${iconFor(cat)}</div>
+        <div class="bar-main">
+          <div class="bar-top">
+            <span class="bar-name">${escapeHtml(cat.name)}</span>
+            <span class="bar-amt">฿${fmtMoney(amount)}</span>
+          </div>
+          <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${cat.color}"></div></div>
+        </div>
       </div>
     `;
   }).join('');
@@ -762,21 +1112,17 @@ function renderCategories() {
   expenseGrid.innerHTML = '';
   incomeGrid.innerHTML = '';
 
-  state.categories.filter(c => c.type === 'expense').forEach(c => {
-    expenseGrid.appendChild(makeCatChip(c));
-  });
+  state.categories.filter(c => c.type === 'expense').forEach(c => expenseGrid.appendChild(makeCatChip(c)));
   expenseGrid.appendChild(makeAddChip('expense'));
 
-  state.categories.filter(c => c.type === 'income').forEach(c => {
-    incomeGrid.appendChild(makeCatChip(c));
-  });
+  state.categories.filter(c => c.type === 'income').forEach(c => incomeGrid.appendChild(makeCatChip(c)));
   incomeGrid.appendChild(makeAddChip('income'));
 }
 
 function makeCatChip(c) {
   const div = document.createElement('div');
   div.className = 'cat-chip';
-  div.innerHTML = `<div class="dot" style="background:${c.color}"></div><span class="name">${escapeHtml(c.name)}</span>`;
+  div.innerHTML = `<div class="dot" style="background:${c.color};display:flex;align-items:center;justify-content:center;font-size:13px;">${iconFor(c)}</div><span class="name">${escapeHtml(c.name)}</span>`;
   div.addEventListener('click', () => openCatModal(c));
   return div;
 }
@@ -790,22 +1136,22 @@ function makeAddChip(type) {
 
 function escapeHtml(s) {
   const d = document.createElement('div');
-  d.textContent = s;
+  d.textContent = s == null ? '' : s;
   return d.innerHTML;
 }
 
-/* ---------------- Tabs ---------------- */
-$$('.tab').forEach(tab => {
-  tab.addEventListener('click', () => {
-    $$('.tab').forEach(t => t.classList.remove('active'));
-    tab.classList.add('active');
-    state.activeTab = tab.dataset.tab;
-    ['list','chart','categories'].forEach(name => {
-      $('#tab-' + name).classList.toggle('hidden', name !== state.activeTab);
-    });
-    render();
+/* ---------------- View switching (segmented control + bottom nav) ---------------- */
+function setActiveView(view) {
+  state.activeView = view;
+  $$('.view-switch button').forEach(b => b.classList.toggle('active', b.dataset.view === view));
+  $$('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.view === view));
+  ['list','chart','categories'].forEach(name => {
+    $('#view-' + name).classList.toggle('hidden', name !== view);
   });
-});
+  render();
+}
+$$('.view-switch button').forEach(b => b.addEventListener('click', () => setActiveView(b.dataset.view)));
+$$('.nav-btn').forEach(b => b.addEventListener('click', () => setActiveView(b.dataset.view)));
 
 /* ---------------- Month nav ---------------- */
 $('#prevMonth').addEventListener('click', () => {
@@ -836,7 +1182,7 @@ function renderTxCatPicker() {
   cats.forEach(c => {
     const div = document.createElement('div');
     div.className = 'pick' + (state.selectedCatId === c.id ? ' selected' : '');
-    div.innerHTML = `<div class="dot" style="background:${c.color}"></div>${escapeHtml(c.name)}`;
+    div.innerHTML = `<span>${iconFor(c)}</span>${escapeHtml(c.name)}`;
     div.addEventListener('click', () => {
       state.selectedCatId = c.id;
       renderTxCatPicker();
@@ -946,12 +1292,40 @@ function renderSwatches() {
   });
 }
 
+function renderIconGrid() {
+  const wrap = $('#catIconGrid');
+  wrap.innerHTML = '';
+  ICON_CHOICES.forEach(icon => {
+    const div = document.createElement('div');
+    div.className = 'icon-pick' + (state.selectedIcon === icon ? ' selected' : '');
+    div.textContent = icon;
+    div.addEventListener('click', () => {
+      state.selectedIcon = icon;
+      $('#catIconCustom').value = '';
+      renderIconGrid();
+    });
+    wrap.appendChild(div);
+  });
+}
+
+$('#catIconCustom').addEventListener('input', (e) => {
+  const val = e.target.value.trim();
+  if (val) {
+    state.selectedIcon = val;
+    renderIconGrid(); // เคลียร์ selected state ของ grid เพราะตอนนี้ใช้ค่าจาก custom input แทน
+  }
+});
+
 function openCatModal(cat, defaultType) {
   state.editingCatId = cat ? cat.id : null;
   $('#catModalTitle').textContent = cat ? 'แก้ไขหมวดหมู่' : 'เพิ่มหมวดหมู่';
   $('#catDeleteBtn').classList.toggle('hidden', !cat);
   $('#catName').value = cat ? cat.name : '';
   state.selectedColor = cat ? cat.color : SWATCH_COLORS[Math.floor(Math.random()*SWATCH_COLORS.length)];
+  state.selectedIcon = cat ? (cat.icon || '✦') : ICON_CHOICES[0];
+  // ถ้าไอคอนปัจจุบันไม่อยู่ในชุดให้เลือก แสดงในช่อง custom แทน
+  $('#catIconCustom').value = ICON_CHOICES.includes(state.selectedIcon) ? '' : state.selectedIcon;
+  renderIconGrid();
   setCatType(cat ? cat.type : (defaultType || 'expense'));
   renderSwatches();
   $('#catOverlay').classList.add('show');
@@ -967,7 +1341,7 @@ $('#catSaveBtn').addEventListener('click', () => {
   const name = $('#catName').value.trim();
   if (!name) { showToast('กรุณาใส่ชื่อหมวดหมู่'); return; }
 
-  const payload = { name, color: state.selectedColor, type: state.catType };
+  const payload = { name, color: state.selectedColor, type: state.catType, icon: state.selectedIcon || '✦' };
   const btn = $('#catSaveBtn');
   btn.disabled = true;
   btn.textContent = 'กำลังบันทึก…';
