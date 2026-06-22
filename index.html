@@ -416,6 +416,29 @@
   /* ---------- Chart view ---------- */
   .chart-wrap { padding-top: 6px; }
   .chart-empty { text-align: center; padding: 60px 20px; color: var(--text-faint); }
+  .chart-section-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 4px 0 4px;
+  }
+  .manage-groups-btn {
+    background: transparent;
+    border: 1px solid var(--glass-soft-border);
+    color: var(--text-dim);
+    font-size: 12.5px;
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .manage-groups-btn:hover { border-color: rgba(255,255,255,0.3); color: var(--text); }
+  .chart-group-empty {
+    font-size: 13px;
+    color: var(--text-faint);
+    padding: 4px 2px 16px;
+  }
   .bar-row {
     display: flex;
     align-items: center;
@@ -434,6 +457,24 @@
     backdrop-filter: blur(6px);
     border: 1px solid var(--c-border);
     box-shadow: 0 3px 10px var(--c-shadow), inset 0 1px 0 rgba(255,255,255,0.3);
+    position: relative;
+  }
+  .bar-row .bar-icon .group-count-badge {
+    position: absolute;
+    bottom: -4px;
+    right: -4px;
+    background: var(--bg-solid, #11151C);
+    border: 1.5px solid var(--c-border);
+    border-radius: 999px;
+    font-size: 9px;
+    font-weight: 700;
+    min-width: 15px;
+    height: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text);
+    padding: 0 3px;
   }
   .bar-row .bar-main { flex: 1; min-width: 0; }
   .bar-row .bar-top {
@@ -446,6 +487,27 @@
   .bar-row .bar-amt { font-variant-numeric: tabular-nums; color: var(--text-dim); }
   .bar-track { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.06); border-radius: 6px; height: 8px; overflow: hidden; }
   .bar-fill { height: 100%; border-radius: 6px; transition: width 0.4s ease; }
+
+  /* ---------- Group management ---------- */
+  .group-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 14px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--glass-soft-border);
+    transition: background 0.12s;
+  }
+  .group-card:hover { background: rgba(255,255,255,0.08); }
+  .group-card .group-dot { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; }
+  .group-card .group-info { flex: 1; min-width: 0; }
+  .group-card .group-name { font-size: 14px; font-weight: 600; color: var(--text); }
+  .group-card .group-members { font-size: 12px; color: var(--text-dim); margin-top: 1px; }
+  .group-empty-hint { font-size: 13px; color: var(--text-faint); padding: 10px 2px 16px; }
+  .group-hint { font-size: 12px; color: var(--text-faint); margin-top: 8px; line-height: 1.5; }
 
   /* ---------- Categories view ---------- */
   .cat-section-title {
@@ -946,6 +1008,12 @@
       </div>
 
       <div id="view-chart" class="hidden">
+        <div class="chart-section-row">
+          <div class="cat-section-title" style="margin:0;">กลุ่มที่รวมไว้</div>
+          <button class="manage-groups-btn" id="manageGroupsBtn">+ จัดการกลุ่ม</button>
+        </div>
+        <div class="chart-wrap" id="groupChartWrap"></div>
+        <div class="cat-section-title" id="soloChartTitle">หมวดหมู่</div>
         <div class="chart-wrap" id="chartWrap"></div>
       </div>
 
@@ -1083,6 +1151,45 @@
   </div>
 </div>
 
+<!-- Manage groups list sheet -->
+<div class="overlay" id="manageGroupsOverlay">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <h2>จัดการกลุ่มหมวดหมู่</h2>
+    <div id="groupsManageList"></div>
+    <button class="add-cat-chip" id="addGroupBtn" style="width:100%; margin-top:10px;">+ สร้างกลุ่มใหม่</button>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="manageGroupsCloseBtn" style="flex:1;">ปิด</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add/edit group sheet -->
+<div class="overlay" id="groupOverlay">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <h2 id="groupModalTitle">สร้างกลุ่ม</h2>
+    <div class="field">
+      <label for="groupName">ชื่อกลุ่ม</label>
+      <input type="text" id="groupName" placeholder="เช่น กินดื่ม, ค่าเดินทางทั้งหมด">
+    </div>
+    <div class="field">
+      <label>เลือกสี</label>
+      <div class="swatches" id="groupSwatches"></div>
+    </div>
+    <div class="field">
+      <label>เลือกหมวดหมู่ที่จะรวมในกลุ่มนี้</label>
+      <div class="cat-picker" id="groupCatPicker"></div>
+      <div class="group-hint" id="groupCatHint"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-danger hidden" id="groupDeleteBtn">ลบ</button>
+      <button class="btn btn-ghost" id="groupCancelBtn">ยกเลิก</button>
+      <button class="btn btn-primary" id="groupSaveBtn">บันทึก</button>
+    </div>
+  </div>
+</div>
+
 <script>
 /* =========================================================================
    ตั้งค่า: ใส่ URL ของ Google Apps Script Web App ที่นี่
@@ -1105,6 +1212,7 @@ let state = {
   transactions: [],
   categories: [],
   recurring: [],
+  groups: [],
   currentMonth: new Date(),
   activeView: 'list',
   editingTxId: null,
@@ -1116,6 +1224,9 @@ let state = {
   selectedIcon: ICON_CHOICES[0],
   editingRecurId: null,
   selectedRecurCatId: null,
+  editingGroupId: null,
+  selectedGroupColor: SWATCH_COLORS[0],
+  selectedGroupCatIds: [],
 };
 
 const $ = (sel) => document.querySelector(sel);
@@ -1183,6 +1294,7 @@ function loadAll() {
     state.transactions = data.transactions;
     state.categories = data.categories;
     state.recurring = data.recurring || [];
+    state.groups = data.groups || [];
   });
 }
 
@@ -1344,34 +1456,80 @@ function renderList() {
   });
 }
 
+function groupById(id) {
+  return state.groups.find(g => g.id === id);
+}
+// คืน id ของกลุ่มที่หมวดหมู่นี้สังกัดอยู่ (ถ้ามี) — หมวดหมู่หนึ่งอยู่ได้แค่ 1 กลุ่ม
+function groupOfCategory(catId) {
+  return state.groups.find(g => g.categoryIds.includes(catId));
+}
+
+function renderBarRow(icon, color, name, amount, max, extraBadge) {
+  const pct = Math.max(4, (amount / max) * 100);
+  const lightShade = hexToRgba(color, 1);
+  return `
+    <div class="bar-row">
+      <div class="bar-icon" style="${glassIconStyle(color)}">${icon}${extraBadge || ''}</div>
+      <div class="bar-main">
+        <div class="bar-top">
+          <span class="bar-name">${escapeHtml(name)}</span>
+          <span class="bar-amt">฿${fmtMoney(amount)}</span>
+        </div>
+        <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:linear-gradient(90deg, ${hexToRgba(color,0.55)}, ${lightShade})"></div></div>
+      </div>
+    </div>
+  `;
+}
+
 function renderChart() {
   const txs = txInCurrentMonth().filter(t => t.type === 'expense');
   const totals = {};
   txs.forEach(t => { totals[t.category] = (totals[t.category] || 0) + t.amount; });
-  const entries = Object.entries(totals).sort((a,b) => b[1]-a[1]);
-  const max = entries.length ? entries[0][1] : 1;
 
-  const wrap = $('#chartWrap');
-  if (!entries.length) {
-    wrap.innerHTML = '<div class="chart-empty"><div class="glyph" style="font-size:30px;opacity:0.5;margin-bottom:10px">▤</div>ยังไม่มีรายจ่ายในเดือนนี้</div>';
+  // แยกยอดเป็น 2 กลุ่ม: หมวดหมู่ที่อยู่ในกลุ่ม (รวมยอด) กับหมวดหมู่เดี่ยวที่ไม่ได้อยู่กลุ่มไหน
+  const groupTotals = {}; // groupId -> sum
+  const soloTotals = {}; // catId -> amount (เฉพาะที่ไม่ได้อยู่ในกลุ่มไหน)
+
+  Object.entries(totals).forEach(([catId, amount]) => {
+    const grp = groupOfCategory(catId);
+    if (grp) {
+      groupTotals[grp.id] = (groupTotals[grp.id] || 0) + amount;
+    } else {
+      soloTotals[catId] = amount;
+    }
+  });
+
+  const groupEntries = Object.entries(groupTotals).sort((a,b) => b[1]-a[1]);
+  const soloEntries = Object.entries(soloTotals).sort((a,b) => b[1]-a[1]);
+  const groupMax = groupEntries.length ? groupEntries[0][1] : 1;
+  const soloMax = soloEntries.length ? soloEntries[0][1] : 1;
+
+  // ---- ส่วนกลุ่ม ----
+  const groupWrap = $('#groupChartWrap');
+  if (!groupEntries.length) {
+    groupWrap.innerHTML = `<div class="chart-group-empty">${state.groups.length ? 'ยังไม่มีรายจ่ายในกลุ่มที่ตั้งไว้เดือนนี้' : 'ยังไม่มีกลุ่ม — กด "จัดการกลุ่ม" เพื่อรวมหมวดหมู่ที่ต้องการดูยอดรวมกัน'}</div>`;
+  } else {
+    groupWrap.innerHTML = groupEntries.map(([groupId, amount]) => {
+      const grp = groupById(groupId) || { name: 'กลุ่ม', color: '#888888', categoryIds: [] };
+      const firstCat = catById(grp.categoryIds[0]);
+      const icon = firstCat ? iconFor(firstCat) : '📁';
+      const badge = grp.categoryIds.length > 1
+        ? `<span class="group-count-badge">${grp.categoryIds.length}</span>`
+        : '';
+      return renderBarRow(icon, grp.color, grp.name, amount, groupMax, badge);
+    }).join('');
+  }
+
+  // ---- ส่วนหมวดหมู่เดี่ยว (ไม่ได้อยู่ในกลุ่มไหน) ----
+  const soloWrap = $('#chartWrap');
+  $('#soloChartTitle').textContent = groupEntries.length ? 'หมวดหมู่เดี่ยว' : 'หมวดหมู่';
+  if (!soloEntries.length) {
+    soloWrap.innerHTML = '<div class="chart-empty"><div class="glyph" style="font-size:30px;opacity:0.5;margin-bottom:10px">▤</div>ยังไม่มีรายจ่ายในเดือนนี้</div>';
     return;
   }
-  wrap.innerHTML = entries.map(([catId, amount]) => {
+  soloWrap.innerHTML = soloEntries.map(([catId, amount]) => {
     const cat = catById(catId) || { name: 'ไม่ทราบหมวดหมู่', color: '#888888' };
-    const pct = Math.max(4, (amount / max) * 100);
-    const lightShade = hexToRgba(cat.color, 1);
-    return `
-      <div class="bar-row">
-        <div class="bar-icon" style="${glassIconStyle(cat.color)}">${iconFor(cat)}</div>
-        <div class="bar-main">
-          <div class="bar-top">
-            <span class="bar-name">${escapeHtml(cat.name)}</span>
-            <span class="bar-amt">฿${fmtMoney(amount)}</span>
-          </div>
-          <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:linear-gradient(90deg, ${hexToRgba(cat.color,0.55)}, ${lightShade})"></div></div>
-        </div>
-      </div>
-    `;
+    return renderBarRow(iconFor(cat), cat.color, cat.name, amount, soloMax);
   }).join('');
 }
 
@@ -1430,6 +1588,160 @@ function updateRecurringBadge() {
     }
   });
 }
+
+/* ---------------- Category groups logic ---------------- */
+
+function openManageGroupsModal() {
+  renderManageGroupsList();
+  $('#manageGroupsOverlay').classList.add('show');
+}
+function closeManageGroupsModal() {
+  $('#manageGroupsOverlay').classList.remove('show');
+}
+
+function renderManageGroupsList() {
+  const wrap = $('#groupsManageList');
+  if (!state.groups.length) {
+    wrap.innerHTML = '<div class="group-empty-hint">ยังไม่มีกลุ่ม กดปุ่มด้านล่างเพื่อสร้างกลุ่มแรก</div>';
+    return;
+  }
+  wrap.innerHTML = state.groups.map(g => {
+    const memberNames = g.categoryIds.map(id => {
+      const c = catById(id);
+      return c ? c.name : null;
+    }).filter(Boolean);
+    const memberText = memberNames.length ? memberNames.join(', ') : 'ยังไม่มีหมวดหมู่ในกลุ่มนี้';
+    return `
+      <div class="group-card" data-group-id="${g.id}">
+        <div class="group-dot" style="background:${g.color}"></div>
+        <div class="group-info">
+          <div class="group-name">${escapeHtml(g.name)}</div>
+          <div class="group-members">${escapeHtml(memberText)}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+  $$('.group-card').forEach(card => {
+    card.addEventListener('click', () => openGroupModal(state.groups.find(g => g.id === card.dataset.groupId)));
+  });
+}
+
+$('#manageGroupsBtn').addEventListener('click', openManageGroupsModal);
+$('#manageGroupsCloseBtn').addEventListener('click', closeManageGroupsModal);
+$('#manageGroupsOverlay').addEventListener('click', (e) => { if (e.target.id === 'manageGroupsOverlay') closeManageGroupsModal(); });
+$('#addGroupBtn').addEventListener('click', () => openGroupModal(null));
+
+function renderGroupSwatches() {
+  const wrap = $('#groupSwatches');
+  wrap.innerHTML = '';
+  SWATCH_COLORS.forEach(color => {
+    const div = document.createElement('div');
+    div.className = 'swatch' + (state.selectedGroupColor === color ? ' selected' : '');
+    div.style.background = color;
+    div.addEventListener('click', () => {
+      state.selectedGroupColor = color;
+      renderGroupSwatches();
+    });
+    wrap.appendChild(div);
+  });
+}
+
+// แสดงหมวดหมู่รายจ่ายทั้งหมดให้เลือกเข้ากลุ่ม พร้อมบอกถ้าหมวดหมู่นั้นอยู่ในกลุ่มอื่นอยู่แล้ว (จะถูกย้ายมาถ้าเลือก)
+function renderGroupCatPicker() {
+  const picker = $('#groupCatPicker');
+  picker.innerHTML = '';
+  const cats = state.categories.filter(c => c.type === 'expense');
+  let conflictNote = '';
+  cats.forEach(c => {
+    const selected = state.selectedGroupCatIds.includes(c.id);
+    const existingGroup = groupOfCategory(c.id);
+    const inOtherGroup = existingGroup && existingGroup.id !== state.editingGroupId;
+    const div = document.createElement('div');
+    div.className = 'pick' + (selected ? ' selected' : '');
+    div.innerHTML = `<span>${iconFor(c)}</span>${escapeHtml(c.name)}${inOtherGroup ? ' ↺' : ''}`;
+    div.addEventListener('click', () => {
+      if (selected) {
+        state.selectedGroupCatIds = state.selectedGroupCatIds.filter(id => id !== c.id);
+      } else {
+        state.selectedGroupCatIds.push(c.id);
+      }
+      renderGroupCatPicker();
+    });
+    picker.appendChild(div);
+    if (inOtherGroup) conflictNote = '↺ หมายถึงหมวดหมู่นั้นอยู่ในกลุ่มอื่นอยู่แล้ว ถ้าเลือกจะถูกย้ายมากลุ่มนี้แทน (1 หมวดหมู่อยู่ได้แค่ 1 กลุ่ม)';
+  });
+  $('#groupCatHint').textContent = conflictNote;
+}
+
+function openGroupModal(group) {
+  state.editingGroupId = group ? group.id : null;
+  $('#groupModalTitle').textContent = group ? 'แก้ไขกลุ่ม' : 'สร้างกลุ่ม';
+  $('#groupDeleteBtn').classList.toggle('hidden', !group);
+  $('#groupName').value = group ? group.name : '';
+  state.selectedGroupColor = group ? group.color : SWATCH_COLORS[Math.floor(Math.random()*SWATCH_COLORS.length)];
+  state.selectedGroupCatIds = group ? [...group.categoryIds] : [];
+  renderGroupSwatches();
+  renderGroupCatPicker();
+  closeManageGroupsModal();
+  $('#groupOverlay').classList.add('show');
+}
+function closeGroupModal() {
+  $('#groupOverlay').classList.remove('show');
+  openManageGroupsModal(); // กลับไปที่ลิสต์จัดการกลุ่ม
+}
+
+$('#groupCancelBtn').addEventListener('click', closeGroupModal);
+$('#groupOverlay').addEventListener('click', (e) => { if (e.target.id === 'groupOverlay') closeGroupModal(); });
+
+$('#groupSaveBtn').addEventListener('click', () => {
+  const name = $('#groupName').value.trim();
+  if (!name) { showToast('กรุณาใส่ชื่อกลุ่ม'); return; }
+  if (!state.selectedGroupCatIds.length) { showToast('กรุณาเลือกหมวดหมู่อย่างน้อย 1 รายการ'); return; }
+
+  const payload = { name, color: state.selectedGroupColor, categoryIds: state.selectedGroupCatIds };
+  const btn = $('#groupSaveBtn');
+  btn.disabled = true;
+  btn.textContent = 'กำลังบันทึก…';
+
+  const action = state.editingGroupId ? 'updateGroup' : 'addGroup';
+  if (state.editingGroupId) payload.id = state.editingGroupId;
+
+  apiCall(action, { ...payload, categoryIds: payload.categoryIds }).then(res => {
+    const groupId = state.editingGroupId || res.id;
+    // เอาหมวดหมู่ที่เพิ่งกำหนดออกจากกลุ่มอื่นในฝั่ง client ด้วย (ให้ตรงกับ backend)
+    state.groups.forEach(g => {
+      if (g.id !== groupId) {
+        g.categoryIds = g.categoryIds.filter(id => !payload.categoryIds.includes(id));
+      }
+    });
+    if (!state.editingGroupId) {
+      state.groups.push({ ...payload, id: res.id });
+    } else {
+      const idx = state.groups.findIndex(g => g.id === state.editingGroupId);
+      if (idx > -1) state.groups[idx] = { ...state.groups[idx], ...payload };
+    }
+    closeGroupModal();
+    render();
+    showToast('บันทึกแล้ว');
+  }).catch(err => {
+    showToast('ผิดพลาด: ' + err.message);
+  }).finally(() => {
+    btn.disabled = false;
+    btn.textContent = 'บันทึก';
+  });
+});
+
+$('#groupDeleteBtn').addEventListener('click', () => {
+  if (!state.editingGroupId) return;
+  if (!confirm('ลบกลุ่มนี้ใช่หรือไม่? หมวดหมู่ในกลุ่มจะกลับไปแสดงแยกเดี่ยวตามปกติ')) return;
+  const id = state.editingGroupId;
+  apiCall('deleteGroup', { id }).then(() => {
+    state.groups = state.groups.filter(g => g.id !== id);
+    closeGroupModal();
+    render();
+    showToast('ลบกลุ่มแล้ว');
+  }).catch(err => showToast('ผิดพลาด: ' + err.message));
+});
 
 function renderRecurring() {
   const dueWrap = $('#recurringDue');
