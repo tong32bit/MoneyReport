@@ -162,7 +162,7 @@
     box-shadow: 0 0 10px rgba(163,230,53,0.6);
   }
   .topbar .date {
-    font-size: 12px;
+    font-size: 24px;
     color: var(--text-faint);
   }
 
@@ -716,8 +716,8 @@
   }
   .bottom-nav-inner {
     pointer-events: auto;
-    max-width: 440px;
-    width: calc(100% - 32px);
+    max-width: 480px;
+    width: calc(100% - 20px);
     background: rgba(20,22,32,0.55);
     backdrop-filter: blur(24px) saturate(180%);
     -webkit-backdrop-filter: blur(24px) saturate(180%);
@@ -725,8 +725,8 @@
     border-radius: 22px;
     display: flex;
     align-items: center;
-    padding: 8px;
-    gap: 4px;
+    padding: 8px 4px;
+    gap: 2px;
     box-shadow: 0 10px 40px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.1);
   }
   .nav-btn {
@@ -734,18 +734,18 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 3px;
+    gap: 2px;
     background: transparent;
     border: none;
     color: var(--text-faint);
     cursor: pointer;
-    padding: 8px 4px;
+    padding: 6px 2px;
     border-radius: 14px;
     transition: color 0.15s, background 0.15s;
     position: relative;
   }
-  .nav-btn .nav-icon { font-size: 18px; line-height: 1; }
-  .nav-btn .nav-text { font-size: 11px; font-weight: 600; }
+  .nav-btn .nav-icon { font-size: 16px; line-height: 1; }
+  .nav-btn .nav-text { font-size: 22px; font-weight: 600; }
   .nav-btn.active { color: #fff; background: rgba(255,255,255,0.08); }
 
   .nav-fab {
@@ -1047,7 +1047,7 @@
 
     <div class="view-switch glass-soft">
       <button class="active" data-view="list">รายการ</button>
-      <button data-view="chart">กราฟ</button>
+      <button data-view="chart">สรุป</button>
       <button data-view="recurring">ประจำ<span class="tab-badge hidden" id="recurringTabBadge"></span></button>
       <button data-view="categories">หมวดหมู่</button>
     </div>
