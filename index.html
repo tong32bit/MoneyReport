@@ -488,6 +488,61 @@
   .bar-track { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.06); border-radius: 6px; height: 8px; overflow: hidden; }
   .bar-fill { height: 100%; border-radius: 6px; transition: width 0.4s ease; }
 
+  /* ---------- Group bar row (expandable) ---------- */
+  .group-bar-row { cursor: pointer; padding: 4px; margin: -4px -4px 0; border-radius: 12px; transition: background 0.12s; }
+  .group-bar-row:hover { background: rgba(255,255,255,0.04); }
+  .group-expand-btn {
+    flex-shrink: 0;
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    border: 1px solid var(--glass-soft-border);
+    background: rgba(255,255,255,0.04);
+    color: var(--text-dim);
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.22s ease, background 0.15s, color 0.15s;
+  }
+  .group-expand-btn:hover { background: rgba(255,255,255,0.1); color: var(--text); }
+  .group-expand-btn.expanded { transform: rotate(90deg); color: var(--text); }
+
+  .group-members-panel {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.28s ease;
+    margin-bottom: 0;
+  }
+  .group-members-panel.show {
+    max-height: 400px;
+    margin-bottom: 12px;
+  }
+  .group-members-inner {
+    padding: 10px 4px 2px 50px;
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+  }
+  .group-member-row {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+  }
+  .group-member-icon {
+    width: 26px; height: 26px;
+    border-radius: 9px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    background: linear-gradient(155deg, var(--c-light), var(--c-mid));
+    border: 1px solid var(--c-border);
+  }
+  .group-member-name { flex: 1; font-size: 13px; color: var(--text-dim); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .group-member-amt { font-size: 13px; font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; }
+
   /* ---------- Group management ---------- */
   .group-card {
     display: flex;
@@ -1061,7 +1116,7 @@
     <div class="field">
       <div class="type-toggle">
         <button type="button" class="active expense" id="typeExpenseBtn">รายจ่าย</button>
-        <button type="button" id="typeIncomeBtn">รายรับ</button>
+        <button type="button" id="typeIncomeBtn" class="income">รายรับ</button>
       </div>
     </div>
     <div class="field">
@@ -1096,7 +1151,7 @@
     <div class="field">
       <div class="type-toggle">
         <button type="button" class="active expense" id="catTypeExpenseBtn">รายจ่าย</button>
-        <button type="button" id="catTypeIncomeBtn">รายรับ</button>
+        <button type="button" id="catTypeIncomeBtn" class="income">รายรับ</button>
       </div>
     </div>
     <div class="field">
@@ -1227,6 +1282,7 @@ let state = {
   editingGroupId: null,
   selectedGroupColor: SWATCH_COLORS[0],
   selectedGroupCatIds: [],
+  expandedGroupIds: new Set(),
 };
 
 const $ = (sel) => document.querySelector(sel);
@@ -1481,6 +1537,63 @@ function renderBarRow(icon, color, name, amount, max, extraBadge) {
   `;
 }
 
+// แถบกราฟของ "กลุ่ม" ที่กดขยาย/ย่อได้ เพื่อดูว่ามีหมวดหมู่อะไรอยู่ในกลุ่มบ้าง พร้อมยอดของแต่ละหมวดหมู่
+function renderGroupBarRow(grp, amount, max, memberAmounts) {
+  const pct = Math.max(4, (amount / max) * 100);
+  const lightShade = hexToRgba(grp.color, 1);
+  const firstCat = catById(grp.categoryIds[0]);
+  const icon = firstCat ? iconFor(firstCat) : '📁';
+  const badge = grp.categoryIds.length > 1
+    ? `<span class="group-count-badge">${grp.categoryIds.length}</span>`
+    : '';
+  const isExpanded = state.expandedGroupIds.has(grp.id);
+
+  // รายชื่อหมวดหมู่ในกลุ่ม เรียงตามยอดมากไปน้อย (รวมหมวดหมู่ที่ยังไม่มีรายจ่ายเดือนนี้ด้วย แสดงเป็น ฿0.00)
+  const memberRows = grp.categoryIds
+    .map(catId => {
+      const cat = catById(catId);
+      if (!cat) return null;
+      const catAmount = memberAmounts[catId] || 0;
+      return { cat, amount: catAmount };
+    })
+    .filter(Boolean)
+    .sort((a, b) => b.amount - a.amount);
+
+  const memberHtml = memberRows.map(({ cat, amount: catAmount }) => `
+    <div class="group-member-row">
+      <div class="group-member-icon" style="${glassIconStyle(cat.color)}">${iconFor(cat)}</div>
+      <span class="group-member-name">${escapeHtml(cat.name)}</span>
+      <span class="group-member-amt">฿${fmtMoney(catAmount)}</span>
+    </div>
+  `).join('');
+
+  return `
+    <div class="bar-row group-bar-row" data-group-toggle="${grp.id}">
+      <div class="bar-icon" style="${glassIconStyle(grp.color)}">${icon}${badge}</div>
+      <div class="bar-main">
+        <div class="bar-top">
+          <span class="bar-name">${escapeHtml(grp.name)}</span>
+          <span class="bar-amt">฿${fmtMoney(amount)}</span>
+        </div>
+        <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:linear-gradient(90deg, ${hexToRgba(grp.color,0.55)}, ${lightShade})"></div></div>
+      </div>
+      <button class="group-expand-btn ${isExpanded ? 'expanded' : ''}" data-group-toggle="${grp.id}" aria-label="ขยาย/ย่อรายละเอียดกลุ่ม">›</button>
+    </div>
+    <div class="group-members-panel ${isExpanded ? 'show' : ''}" id="groupMembers-${grp.id}">
+      <div class="group-members-inner">${memberHtml}</div>
+    </div>
+  `;
+}
+
+function toggleGroupExpand(groupId) {
+  if (state.expandedGroupIds.has(groupId)) {
+    state.expandedGroupIds.delete(groupId);
+  } else {
+    state.expandedGroupIds.add(groupId);
+  }
+  renderChart();
+}
+
 function renderChart() {
   const txs = txInCurrentMonth().filter(t => t.type === 'expense');
   const totals = {};
@@ -1510,14 +1623,15 @@ function renderChart() {
     groupWrap.innerHTML = `<div class="chart-group-empty">${state.groups.length ? 'ยังไม่มีรายจ่ายในกลุ่มที่ตั้งไว้เดือนนี้' : 'ยังไม่มีกลุ่ม — กด "จัดการกลุ่ม" เพื่อรวมหมวดหมู่ที่ต้องการดูยอดรวมกัน'}</div>`;
   } else {
     groupWrap.innerHTML = groupEntries.map(([groupId, amount]) => {
-      const grp = groupById(groupId) || { name: 'กลุ่ม', color: '#888888', categoryIds: [] };
-      const firstCat = catById(grp.categoryIds[0]);
-      const icon = firstCat ? iconFor(firstCat) : '📁';
-      const badge = grp.categoryIds.length > 1
-        ? `<span class="group-count-badge">${grp.categoryIds.length}</span>`
-        : '';
-      return renderBarRow(icon, grp.color, grp.name, amount, groupMax, badge);
+      const grp = groupById(groupId) || { id: groupId, name: 'กลุ่ม', color: '#888888', categoryIds: [] };
+      return renderGroupBarRow(grp, amount, groupMax, totals);
     }).join('');
+    $$('[data-group-toggle]').forEach(el => {
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleGroupExpand(el.dataset.groupToggle);
+      });
+    });
   }
 
   // ---- ส่วนหมวดหมู่เดี่ยว (ไม่ได้อยู่ในกลุ่มไหน) ----
