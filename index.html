@@ -734,18 +734,18 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 2px;
+    justify-content: center;
     background: transparent;
     border: none;
     color: var(--text-faint);
     cursor: pointer;
-    padding: 6px 2px;
+    padding: 12px 2px;
     border-radius: 14px;
     transition: color 0.15s, background 0.15s;
     position: relative;
   }
   .nav-btn .nav-icon { font-size: 16px; line-height: 1; }
-  .nav-btn .nav-text { font-size: 22px; font-weight: 600; }
+  .nav-btn .nav-text { font-size: 18px; font-weight: 600; }
   .nav-btn.active { color: #fff; background: rgba(255,255,255,0.08); }
 
   .nav-fab {
@@ -1096,11 +1096,11 @@
   <div class="bottom-nav">
     <div class="bottom-nav-inner" id="bottomNavInner">
       <button class="nav-btn active" data-view="list">
-        <span class="nav-icon">☰</span><span class="nav-text">รายการ</span>
+        <span class="nav-text">รายการ</span>
       </button>
       <button class="nav-fab" id="fabAdd" aria-label="เพิ่มรายการ">+</button>
       <button class="nav-btn" data-view="recurring">
-        <span class="nav-icon">↻</span><span class="nav-text">ประจำ</span>
+        <span class="nav-text">ประจำ</span>
         <span class="tab-badge hidden" id="recurringNavBadge"></span>
       </button>
     </div>
