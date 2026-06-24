@@ -585,9 +585,36 @@
     padding: 11px 12px;
     font-size: 15px;
     cursor: pointer;
-    transition: background 0.12s;
+    transition: background 0.12s, transform 0.15s, box-shadow 0.15s;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    position: relative;
   }
   .cat-chip:hover { background: rgba(255,255,255,0.08); }
+  .cat-chip.cat-chip-dragging {
+    transform: scale(1.06);
+    box-shadow: 0 14px 30px -8px rgba(0,0,0,0.5);
+    background: rgba(255,255,255,0.12);
+    z-index: 20;
+    cursor: grabbing;
+    transition: none;
+  }
+  .cat-chip.cat-chip-pressed { transform: scale(0.97); }
+  .cat-grid.cat-grid-reordering .cat-chip:not(.cat-chip-dragging) {
+    transition: background 0.12s, transform 0.18s, box-shadow 0.15s;
+  }
+  .cat-chip-placeholder {
+    border-radius: 16px;
+    border: 2px dashed rgba(255,255,255,0.18);
+    background: rgba(255,255,255,0.03);
+  }
+  .reorder-hint {
+    font-size: 12px;
+    color: var(--text-faint);
+    text-align: center;
+    padding: 2px 8px 10px;
+  }
   .cat-chip .dot {
     width: 36px; height: 36px;
     border-radius: 12px;
@@ -1089,10 +1116,11 @@
       </div>
 
       <div id="view-categories" class="hidden">
+        <div class="reorder-hint">กดค้างที่หมวดหมู่แล้วลาก เพื่อจัดเรียงลำดับใหม่</div>
         <div class="cat-section-title">หมวดหมู่รายจ่าย</div>
-        <div class="cat-grid" id="catGridExpense"></div>
+        <div class="cat-grid" id="catGridExpense" data-cat-type="expense"></div>
         <div class="cat-section-title">หมวดหมู่รายรับ</div>
-        <div class="cat-grid" id="catGridIncome"></div>
+        <div class="cat-grid" id="catGridIncome" data-cat-type="income"></div>
       </div>
     </div>
 
@@ -2059,8 +2087,9 @@ function renderCategories() {
 function makeCatChip(c) {
   const div = document.createElement('div');
   div.className = 'cat-chip glass-soft';
+  div.dataset.catId = c.id;
   div.innerHTML = `<div class="dot" style="${glassIconStyle(c.color)}">${iconFor(c)}</div><span class="name">${escapeHtml(c.name)}</span>`;
-  div.addEventListener('click', () => openCatModal(c));
+  attachReorderHandlers(div, c);
   return div;
 }
 function makeAddChip(type) {
@@ -2069,6 +2098,150 @@ function makeAddChip(type) {
   div.textContent = '+ เพิ่มหมวดหมู่';
   div.addEventListener('click', () => openCatModal(null, type));
   return div;
+}
+
+/* ---------------- Drag-to-reorder (long-press then drag) ---------------- */
+const REORDER_LONGPRESS_MS = 350;
+const REORDER_MOVE_THRESHOLD = 8; // px — ขยับเกินนี้ก่อนครบเวลาถือว่าตั้งใจเลื่อนหน้าจอ ไม่ใช่ลาก
+
+function attachReorderHandlers(chipEl, category) {
+  let pressTimer = null;
+  let startX = 0, startY = 0;
+  let didDrag = false;
+  let dragState = null;
+
+  function clearPressState() {
+    clearTimeout(pressTimer);
+    pressTimer = null;
+    chipEl.classList.remove('cat-chip-pressed');
+  }
+
+  chipEl.addEventListener('pointerdown', (e) => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    startX = e.clientX;
+    startY = e.clientY;
+    didDrag = false;
+    chipEl.classList.add('cat-chip-pressed');
+    pressTimer = setTimeout(() => {
+      chipEl.classList.remove('cat-chip-pressed');
+      startDrag(chipEl, category, e);
+      didDrag = true;
+    }, REORDER_LONGPRESS_MS);
+  });
+
+  chipEl.addEventListener('pointermove', (e) => {
+    if (!pressTimer) return; // ยังไม่อยู่ในช่วงรอ long-press (อาจกำลังลากอยู่แล้ว ซึ่งจัดการใน startDrag)
+    const dx = e.clientX - startX, dy = e.clientY - startY;
+    if (Math.sqrt(dx*dx + dy*dy) > REORDER_MOVE_THRESHOLD) {
+      clearPressState(); // ขยับมากเกินไปก่อนครบเวลา ถือว่าผู้ใช้ตั้งใจ scroll ไม่ใช่ลาก
+    }
+  });
+
+  chipEl.addEventListener('pointerup', () => {
+    clearPressState();
+    if (!didDrag) {
+      openCatModal(category);
+    }
+  });
+  chipEl.addEventListener('pointercancel', clearPressState);
+  chipEl.addEventListener('pointerleave', () => {
+    if (pressTimer) clearPressState();
+  });
+}
+
+function startDrag(chipEl, category, initialEvent) {
+  const grid = chipEl.parentElement;
+  grid.classList.add('cat-grid-reordering');
+  chipEl.classList.add('cat-chip-dragging');
+  chipEl.setPointerCapture(initialEvent.pointerId);
+
+  const placeholder = document.createElement('div');
+  placeholder.className = 'cat-chip-placeholder';
+  const rect = chipEl.getBoundingClientRect();
+  placeholder.style.width = rect.width + 'px';
+  placeholder.style.height = rect.height + 'px';
+  chipEl.after(placeholder);
+
+  // ลอย chip ออกจาก grid flow ให้ลากตามนิ้วได้อิสระ
+  chipEl.style.position = 'fixed';
+  chipEl.style.width = rect.width + 'px';
+  chipEl.style.zIndex = '999';
+  chipEl.style.left = rect.left + 'px';
+  chipEl.style.top = rect.top + 'px';
+  document.body.appendChild(chipEl);
+
+  const offsetX = initialEvent.clientX - rect.left;
+  const offsetY = initialEvent.clientY - rect.top;
+
+  function getOtherChips() {
+    return Array.from(grid.querySelectorAll('.cat-chip:not(.cat-chip-dragging)'));
+  }
+
+  function onMove(e) {
+    const x = e.clientX - offsetX;
+    const y = e.clientY - offsetY;
+    chipEl.style.left = x + 'px';
+    chipEl.style.top = y + 'px';
+
+    // หาตำแหน่งที่ใกล้ที่สุดในกริดเดียวกัน โดยเทียบจุดศูนย์กลางของ chip ที่ลากกับ chip อื่นๆ
+    const centerX = x + rect.width / 2;
+    const centerY = y + rect.height / 2;
+    const others = getOtherChips();
+    let closest = null, closestDist = Infinity;
+    others.forEach(el => {
+      const r = el.getBoundingClientRect();
+      const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+      const dist = Math.hypot(centerX - cx, centerY - cy);
+      if (dist < closestDist) { closestDist = dist; closest = el; }
+    });
+    if (closest) {
+      const r = closest.getBoundingClientRect();
+      const closestCenterX = r.left + r.width / 2;
+      // สลับตำแหน่ง placeholder ไปก่อน/หลัง closest ขึ้นกับว่า chip ที่ลากอยู่ค่อนไปทางซ้ายหรือขวาของ closest
+      if (centerX < closestCenterX) {
+        closest.before(placeholder);
+      } else {
+        closest.after(placeholder);
+      }
+    }
+  }
+
+  function onUp() {
+    document.removeEventListener('pointermove', onMove);
+    document.removeEventListener('pointerup', onUp);
+
+    // คืนค่า chip กลับเข้า flow ของ grid ที่ตำแหน่ง placeholder แล้วลบ placeholder ทิ้ง
+    placeholder.replaceWith(chipEl);
+    chipEl.style.position = '';
+    chipEl.style.width = '';
+    chipEl.style.zIndex = '';
+    chipEl.style.left = '';
+    chipEl.style.top = '';
+    chipEl.classList.remove('cat-chip-dragging');
+    grid.classList.remove('cat-grid-reordering');
+
+    // คำนวณ sortOrder ใหม่ทั้งหมดของ type นี้ตามลำดับ DOM ปัจจุบัน แล้วบันทึก
+    const catType = grid.dataset.catType;
+    const orderedIds = Array.from(grid.querySelectorAll('.cat-chip')).map(el => el.dataset.catId);
+    const orderPayload = orderedIds.map((id, idx) => ({ id, sortOrder: idx + 1 }));
+
+    // อัปเดต state ในเครื่องให้ตรงกับลำดับใหม่ทันที (ไม่ต้องรอ backend)
+    orderPayload.forEach(({ id, sortOrder }) => {
+      const cat = state.categories.find(c => c.id === id);
+      if (cat) cat.sortOrder = sortOrder;
+    });
+    state.categories.sort((a, b) => {
+      if (a.type !== b.type) return 0; // เรียงแค่ภายในประเภทเดียวกัน ไม่ปนข้ามกัน
+      return a.sortOrder - b.sortOrder;
+    });
+
+    apiCall('reorderCategories', { order: orderPayload, type: catType }).catch(err => {
+      showToast('บันทึกลำดับไม่สำเร็จ: ' + err.message);
+    });
+  }
+
+  document.addEventListener('pointermove', onMove);
+  document.addEventListener('pointerup', onUp);
 }
 
 function escapeHtml(s) {
