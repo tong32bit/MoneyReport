@@ -636,8 +636,13 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 9px 0;
+    padding: 9px 6px;
+    margin: 0 -6px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background 0.12s;
   }
+  .due-item:hover { background: rgba(255,255,255,0.04); }
   .due-item:not(:last-child) { border-bottom: 1px solid rgba(255,255,255,0.06); }
   .due-item .due-icon {
     width: 34px; height: 34px;
@@ -1873,7 +1878,7 @@ function renderRecurring() {
         ${dueItems.map(item => {
           const cat = catById(item.category) || { name: 'ไม่ทราบหมวดหมู่', color: '#888888' };
           return `
-            <div class="due-item">
+            <div class="due-item" data-recur-id="${item.id}">
               <div class="due-icon" style="${glassIconStyle(cat.color)}">${iconFor(cat)}</div>
               <div class="due-main">
                 <div class="due-name">${escapeHtml(item.name)}</div>
@@ -1886,6 +1891,9 @@ function renderRecurring() {
         }).join('')}
       </div>
     `;
+    $$('.due-item').forEach(row => {
+      row.addEventListener('click', () => openRecurModal(state.recurring.find(r => r.id === row.dataset.recurId)));
+    });
     $$('.due-pay-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
