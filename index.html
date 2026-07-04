@@ -1592,6 +1592,8 @@ const ICON_CHOICES = [
   '🍜', '☕', '🍔', '🚗', '🏠', '💡', '🛍️', '💊',
   '🎬', '🐱', '🎁', '💰', '✦', '🍺',
   '📹', '💧', '🍚',
+  // ไอคอนสำหรับหมวด wallet / เครดิต / PayLater (True Money, G-Wallet, Shopee/TikTok PayLater ฯลฯ)
+  '💳', '👛', '💸', '🛒', '🎵', '📲', '🅿️', '🧧',
 ];
 function iconFor(cat) { return (cat && cat.icon) || '✦'; }
 
@@ -3093,6 +3095,12 @@ function renderCatCreditToggle() {
 $('#catCreditToggle').addEventListener('click', () => {
   state.catIsCredit = !state.catIsCredit;
   renderCatCreditToggle();
+  // ตอนสร้างหมวดใหม่ ถ้าเปิดสวิตช์เครดิตและยังไม่ได้เลือกไอคอนเอง (ยังเป็นค่าเริ่มต้น) ช่วยเลือกไอคอน 💳 ให้อัตโนมัติ
+  if (state.catIsCredit && !state.editingCatId && state.selectedIcon === ICON_CHOICES[0]) {
+    state.selectedIcon = '💳';
+    $('#catIconCustom').value = '';
+    renderIconGrid();
+  }
 });
 $('#catTypeExpenseBtn').addEventListener('click', () => setCatType('expense'));
 $('#catTypeIncomeBtn').addEventListener('click', () => setCatType('income'));
