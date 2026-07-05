@@ -1256,6 +1256,127 @@
     cursor: pointer;
   }
 
+  /* ---------- Installment plans (ผ่อนชำระ) ---------- */
+  .installment-plan-card {
+    border-radius: 18px;
+    padding: 14px 15px;
+    margin-bottom: 10px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--glass-soft-border);
+  }
+  .installment-plan-card .ipc-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+  }
+  .installment-plan-card .ipc-icon {
+    width: 36px; height: 36px;
+    border-radius: 12px;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    background: linear-gradient(155deg, var(--c-light), var(--c-mid));
+    backdrop-filter: blur(6px);
+    border: 1px solid var(--c-border);
+    box-shadow: 0 3px 10px var(--c-shadow), inset 0 1px 0 rgba(255,255,255,0.3);
+  }
+  .installment-plan-card .ipc-main { flex: 1; min-width: 0; }
+  .installment-plan-card .ipc-name { font-size: 14.5px; font-weight: 600; color: var(--text); }
+  .installment-plan-card .ipc-sub { font-size: 12px; color: var(--text-dim); margin-top: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .installment-plan-card .ipc-amt { font-size: 15px; font-weight: 700; color: var(--text); white-space: nowrap; }
+  .installment-plan-card .ipc-edit {
+    background: transparent;
+    border: none;
+    color: var(--text-faint);
+    font-size: 14px;
+    cursor: pointer;
+    padding: 4px;
+    flex-shrink: 0;
+    line-height: 1;
+  }
+  .installment-plan-card .ipc-edit:hover { color: var(--lime); }
+  .installment-plan-card .ipc-delete {
+    background: transparent;
+    border: none;
+    color: var(--text-faint);
+    font-size: 15px;
+    cursor: pointer;
+    padding: 4px;
+    flex-shrink: 0;
+    line-height: 1;
+  }
+  .installment-plan-card .ipc-delete:hover { color: var(--coral); }
+
+  .installment-panel {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+  }
+  .installment-panel.show { max-height: 800px; }
+  .installment-rows {
+    padding-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .installment-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 10px;
+    border-radius: 12px;
+    background: rgba(0,0,0,0.15);
+  }
+  .installment-row .ir-seq {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.08);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-dim);
+    flex-shrink: 0;
+  }
+  .installment-row.paid .ir-seq { background: rgba(163,230,53,0.18); color: var(--lime); }
+  .installment-row .ir-main { flex: 1; min-width: 0; }
+  .installment-row .ir-date { font-size: 13px; color: var(--text); }
+  .installment-row .ir-status { font-size: 11.5px; margin-top: 2px; }
+  .installment-row .ir-status.paid { color: var(--lime); }
+  .installment-row .ir-status.due { color: var(--coral); }
+  .installment-row .ir-status.upcoming { color: var(--text-faint); }
+  .installment-row .ir-amt { font-size: 13.5px; font-weight: 700; color: var(--text); white-space: nowrap; }
+  .installment-pay-btn {
+    flex-shrink: 0;
+    background: linear-gradient(135deg, var(--mint), var(--lime));
+    color: #0E1410;
+    border: none;
+    font-size: 11.5px;
+    font-weight: 700;
+    padding: 6px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+
+  .count-toggle { display: flex; gap: 6px; }
+  .count-toggle button {
+    flex: 1;
+    padding: 9px 0;
+    border-radius: 10px;
+    border: 1px solid var(--glass-soft-border);
+    background: rgba(0,0,0,0.18);
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    color: var(--text-dim);
+    transition: all 0.15s;
+  }
+  .count-toggle button.active {
+    background: rgba(163,230,53,0.16);
+    color: var(--lime);
+    border-color: var(--lime);
+  }
+
   .hidden { display: none !important; }
 
   @media (prefers-reduced-motion: reduce) {
@@ -1374,18 +1495,34 @@
       </div>
 
       <div id="view-recurring" class="hidden">
-        <div id="recurringDue"></div>
-        <div id="recurringList"></div>
-        <div class="empty-state hidden" id="recurringEmptyState">
-          <div class="glyph">↻</div>
-          <div>ยังไม่มีรายจ่ายประจำ</div>
-          <div class="sub">กดปุ่ม + ด้านบนเพื่อเพิ่มรายจ่ายที่จ่ายซ้ำทุกเดือน</div>
+        <div class="summary-subtabs">
+          <button class="active" data-recurtab="recurring">รายจ่ายประจำ</button>
+          <button data-recurtab="credit">เครดิต/ผ่อนชำระ</button>
         </div>
-        <button class="add-cat-chip" id="addRecurringBtn" style="width:100%; margin-top:12px;">+ เพิ่มรายจ่ายประจำ</button>
+
+        <div id="recurringSubview-recurring">
+          <div id="recurringDue"></div>
+          <div id="recurringList"></div>
+          <div class="empty-state hidden" id="recurringEmptyState">
+            <div class="glyph">↻</div>
+            <div>ยังไม่มีรายจ่ายประจำ</div>
+            <div class="sub">กดปุ่ม + ด้านล่างเพื่อเพิ่มรายจ่ายที่จ่ายซ้ำทุกเดือน</div>
+          </div>
+          <button class="add-cat-chip" id="addRecurringBtn" style="width:100%; margin-top:12px;">+ เพิ่มรายจ่ายประจำ</button>
+        </div>
+
+        <div id="recurringSubview-credit" class="hidden">
+          <div id="creditDueSection"></div>
+          <div id="installmentSection"></div>
+          <div class="empty-state hidden" id="creditEmptyState">
+            <div class="glyph">💳</div>
+            <div>ยังไม่มีหมวดหมู่เครดิต</div>
+            <div class="sub">ไปที่แท็บ "หมวดหมู่" แล้วเปิดสวิตช์ "หมวดหมู่เครดิต" เพื่อเริ่มใช้งาน</div>
+          </div>
+        </div>
       </div>
 
       <div id="view-categories" class="hidden">
-        <div id="creditDueSection"></div>
         <div class="reorder-hint">กดค้างที่หมวดหมู่แล้วลาก เพื่อจัดเรียงลำดับใหม่</div>
         <div class="cat-section-title">หมวดหมู่รายจ่าย</div>
         <div class="cat-grid" id="catGridExpense" data-cat-type="expense"></div>
@@ -1577,6 +1714,48 @@
   </div>
 </div>
 
+<!-- Installment plan sheet (ผ่อนชำระ เช่น Shopee/TikTok PayLater) -->
+<div class="overlay" id="installmentOverlay">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <h2 id="installmentModalTitle">เพิ่มรายการผ่อนชำระ</h2>
+    <div class="field">
+      <label>หมวดหมู่เครดิต (Wallet / PayLater)</label>
+      <div class="cat-picker" id="installmentCreditCatPicker"></div>
+    </div>
+    <div class="field">
+      <label for="installmentName">ชื่อรายการ</label>
+      <input type="text" id="installmentName" placeholder="เช่น หูฟังไร้สาย, เสื้อผ้า">
+    </div>
+    <div class="field">
+      <label>หมวดหมู่ปลายทาง (ตอนจ่ายแต่ละงวด)</label>
+      <div class="cat-picker" id="installmentTargetCatPicker"></div>
+    </div>
+    <div class="field amount-field">
+      <label for="installmentTotal">ยอดรวมทั้งหมด (บาท)</label>
+      <input type="text" id="installmentTotal" inputmode="decimal" placeholder="0.00">
+    </div>
+    <div class="field">
+      <label>จำนวนงวด (1-5)</label>
+      <div class="count-toggle" id="installmentCountPicker">
+        <button type="button" data-count="1">1</button>
+        <button type="button" data-count="2">2</button>
+        <button type="button" data-count="3" class="active">3</button>
+        <button type="button" data-count="4">4</button>
+        <button type="button" data-count="5">5</button>
+      </div>
+    </div>
+    <div class="field">
+      <label for="installmentFirstDue">วันครบกำหนดงวดแรก</label>
+      <input type="date" id="installmentFirstDue">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="installmentCancelBtn">ยกเลิก</button>
+      <button class="btn btn-primary" id="installmentSaveBtn">บันทึก</button>
+    </div>
+  </div>
+</div>
+
 <script>
 /* =========================================================================
    ตั้งค่า: ใส่ URL ของ Google Apps Script Web App ที่นี่
@@ -1624,6 +1803,14 @@ let state = {
   selectedYear: new Date().getFullYear(),
   catIsCredit: false,
   selectedTargetCatId: null,
+  installmentPlans: [],
+  installmentPayments: [],
+  expandedInstallmentIds: new Set(),
+  selectedInstallmentCatId: null,
+  selectedInstallmentTargetCatId: null,
+  installmentCount: 3,
+  editingInstallmentPlanId: null,
+  recurringSubTab: 'recurring', // 'recurring' | 'credit' — sub-tab ในหน้า "ประจำ"
 };
 
 const $ = (sel) => document.querySelector(sel);
@@ -1692,6 +1879,8 @@ function loadAll() {
     state.categories = data.categories;
     state.recurring = data.recurring || [];
     state.groups = data.groups || [];
+    state.installmentPlans = data.installmentPlans || [];
+    state.installmentPayments = data.installmentPayments || [];
   });
 }
 
@@ -1720,9 +1909,14 @@ function render() {
   renderHero();
   if (state.activeView === 'list') renderList();
   if (state.activeView === 'chart') renderSummaryView();
-  if (state.activeView === 'recurring') renderRecurring();
+  if (state.activeView === 'recurring') renderRecurringView();
   if (state.activeView === 'categories') renderCategories();
   updateRecurringBadge();
+}
+
+function renderRecurringView() {
+  if (state.recurringSubTab === 'recurring') renderRecurring();
+  if (state.recurringSubTab === 'credit') renderCreditSubview();
 }
 
 function renderSummaryView() {
@@ -2236,7 +2430,9 @@ function dueLabel(item) {
 }
 
 function updateRecurringBadge() {
-  const dueCount = state.recurring.filter(r => recurStatus(r) === 'due').length;
+  const dueRecurCount = state.recurring.filter(r => recurStatus(r) === 'due').length;
+  const dueInstallmentCount = state.installmentPayments.filter(p => !p.paid && daysUntil(new Date(p.dueDate + 'T00:00:00')) <= DUE_SOON_DAYS).length;
+  const dueCount = dueRecurCount + dueInstallmentCount;
   const badges = [$('#recurringTabBadge'), $('#recurringNavBadge')];
   badges.forEach(b => {
     if (!b) return;
@@ -2402,6 +2598,27 @@ $('#groupDeleteBtn').addEventListener('click', () => {
     showToast('ลบกลุ่มแล้ว');
   }).catch(err => showToast('ผิดพลาด: ' + err.message));
 });
+
+function setRecurringSubTab(tab) {
+  state.recurringSubTab = tab;
+  $$('#view-recurring .summary-subtabs button[data-recurtab]').forEach(b => b.classList.toggle('active', b.dataset.recurtab === tab));
+  $('#recurringSubview-recurring').classList.toggle('hidden', tab !== 'recurring');
+  $('#recurringSubview-credit').classList.toggle('hidden', tab !== 'credit');
+  renderRecurringView();
+}
+$$('#view-recurring .summary-subtabs button[data-recurtab]').forEach(b => b.addEventListener('click', () => setRecurringSubTab(b.dataset.recurtab)));
+
+// รวมส่วนยอดค้างจ่ายเครดิต + รายการผ่อนชำระ ไว้ใน sub-tab เดียวกัน
+function renderCreditSubview() {
+  const hasCreditCat = state.categories.some(c => c.isCredit);
+  $('#creditEmptyState').classList.toggle('hidden', hasCreditCat);
+  $('#creditDueSection').classList.toggle('hidden', !hasCreditCat);
+  $('#installmentSection').classList.toggle('hidden', !hasCreditCat);
+  if (hasCreditCat) {
+    renderCreditDueSection();
+    renderInstallmentSection();
+  }
+}
 
 function renderRecurring() {
   const dueWrap = $('#recurringDue');
@@ -2585,8 +2802,6 @@ $('#recurDeleteBtn').addEventListener('click', () => {
 });
 
 function renderCategories() {
-  renderCreditDueSection();
-
   const expenseGrid = $('#catGridExpense');
   const incomeGrid = $('#catGridIncome');
   expenseGrid.innerHTML = '';
@@ -2598,6 +2813,280 @@ function renderCategories() {
   state.categories.filter(c => c.type === 'income').forEach(c => incomeGrid.appendChild(makeCatChip(c)));
   incomeGrid.appendChild(makeAddChip('income'));
 }
+
+/* ---------------- Installment plans (ผ่อนชำระ เช่น Shopee/TikTok PayLater) ---------------- */
+
+function fmtDateShort_(iso) {
+  if (!iso) return '';
+  const d = new Date(iso + 'T00:00:00');
+  return d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' });
+}
+
+function dueLabelForDate_(iso) {
+  const diff = daysUntil(new Date(iso + 'T00:00:00'));
+  if (diff === 0) return 'ครบกำหนดวันนี้';
+  if (diff === 1) return 'ครบกำหนดพรุ่งนี้';
+  if (diff > 1) return `อีก ${diff} วัน (${fmtDateShort_(iso)})`;
+  const overdue = Math.abs(diff);
+  return overdue === 1 ? 'เลยกำหนดมา 1 วัน' : `เลยกำหนดมา ${overdue} วัน`;
+}
+
+function installmentPaymentsFor(planId) {
+  return state.installmentPayments.filter(p => p.planId === planId).sort((a, b) => a.seq - b.seq);
+}
+
+function renderInstallmentSection() {
+  const wrap = $('#installmentSection');
+  const creditCats = state.categories.filter(c => c.isCredit);
+  if (!creditCats.length) { wrap.innerHTML = ''; return; }
+
+  let html = `
+    <div class="chart-section-row" style="margin-top:4px;">
+      <div class="cat-section-title" style="margin:0;">รายการผ่อนชำระ</div>
+      <button class="manage-groups-btn" id="addInstallmentBtn">+ เพิ่มรายการผ่อน</button>
+    </div>
+  `;
+
+  if (!state.installmentPlans.length) {
+    html += `<div class="chart-group-empty">ยังไม่มีรายการผ่อนชำระ</div>`;
+  } else {
+    html += state.installmentPlans.map(plan => renderInstallmentPlanCard(plan)).join('');
+  }
+
+  wrap.innerHTML = html;
+  $('#addInstallmentBtn').addEventListener('click', () => openInstallmentModal(null));
+  $$('[data-toggle-plan]').forEach(el => {
+    el.addEventListener('click', () => toggleInstallmentExpand(el.dataset.togglePlan));
+  });
+  $$('[data-pay-installment]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      payInstallment(btn.dataset.payInstallment);
+    });
+  });
+  $$('[data-edit-plan]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openInstallmentModal(state.installmentPlans.find(p => p.id === btn.dataset.editPlan));
+    });
+  });
+  $$('[data-delete-plan]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      deleteInstallmentPlan(btn.dataset.deletePlan);
+    });
+  });
+}
+
+function renderInstallmentPlanCard(plan) {
+  const payments = installmentPaymentsFor(plan.id);
+  const paidCount = payments.filter(p => p.paid).length;
+  const cat = catById(plan.categoryId) || { name: 'ไม่ทราบหมวดหมู่', color: '#888888' };
+  const targetCat = catById(plan.targetCategory);
+  const isExpanded = state.expandedInstallmentIds.has(plan.id);
+
+  const rowsHtml = payments.map(p => {
+    const status = p.paid ? 'paid' : (daysUntil(new Date(p.dueDate + 'T00:00:00')) <= DUE_SOON_DAYS ? 'due' : 'upcoming');
+    const statusLabel = p.paid ? ('✓ จ่ายแล้ว ' + fmtDateShort_(p.paidDate)) : dueLabelForDate_(p.dueDate);
+    return `
+      <div class="installment-row ${p.paid ? 'paid' : ''}">
+        <div class="ir-seq">${p.seq}</div>
+        <div class="ir-main">
+          <div class="ir-date">งวดที่ ${p.seq}/${payments.length} · ${fmtDateShort_(p.dueDate)}</div>
+          <div class="ir-status ${status}">${statusLabel}</div>
+        </div>
+        <div class="ir-amt">฿${fmtMoney(p.amount)}</div>
+        ${p.paid ? '' : `<button class="installment-pay-btn" data-pay-installment="${p.id}">จ่ายแล้ว</button>`}
+      </div>
+    `;
+  }).join('');
+
+  return `
+    <div class="installment-plan-card">
+      <div class="ipc-top" data-toggle-plan="${plan.id}">
+        <div class="ipc-icon" style="${glassIconStyle(cat.color)}">${iconFor(cat)}</div>
+        <div class="ipc-main">
+          <div class="ipc-name">${escapeHtml(plan.name || 'รายการผ่อน')}</div>
+          <div class="ipc-sub">${escapeHtml(cat.name)} → ${escapeHtml(targetCat ? targetCat.name : 'ไม่ทราบหมวดหมู่')} · จ่ายแล้ว ${paidCount}/${payments.length} งวด</div>
+        </div>
+        <div class="ipc-amt">฿${fmtMoney(plan.totalAmount)}</div>
+        ${paidCount === 0 ? `<button class="ipc-edit" data-edit-plan="${plan.id}" aria-label="แก้ไขรายการ" title="แก้ไขรายการ">✎</button>` : ''}
+        <button class="ipc-delete" data-delete-plan="${plan.id}" aria-label="ลบรายการ" title="ลบรายการ">✕</button>
+      </div>
+      <div class="installment-panel ${isExpanded ? 'show' : ''}">
+        <div class="installment-rows">${rowsHtml}</div>
+      </div>
+    </div>
+  `;
+}
+
+function toggleInstallmentExpand(id) {
+  if (state.expandedInstallmentIds.has(id)) {
+    state.expandedInstallmentIds.delete(id);
+  } else {
+    state.expandedInstallmentIds.add(id);
+  }
+  renderInstallmentSection();
+}
+
+function payInstallment(paymentId) {
+  const payment = state.installmentPayments.find(p => p.id === paymentId);
+  if (!payment) return;
+  const plan = state.installmentPlans.find(pl => pl.id === payment.planId);
+  if (!confirm(`ยืนยันจ่ายงวดที่ ${payment.seq} จำนวน ฿${fmtMoney(payment.amount)} ใช่หรือไม่?`)) return;
+
+  const date = todayISO();
+  apiCall('payInstallment', { paymentId, date }).then(res => {
+    payment.paid = true;
+    payment.paidDate = date;
+    payment.transactionId = res.transactionId;
+    state.transactions.push({
+      id: res.transactionId,
+      date,
+      type: 'expense',
+      category: plan ? plan.targetCategory : '',
+      amount: payment.amount,
+      note: (plan ? plan.name : '') + ` (งวดที่ ${payment.seq})`,
+      createdAt: new Date().toISOString(),
+    });
+    render();
+    showToast('บันทึกการจ่ายงวดแล้ว');
+  }).catch(err => showToast('ผิดพลาด: ' + err.message));
+}
+
+function deleteInstallmentPlan(id) {
+  if (!confirm('ลบรายการผ่อนชำระนี้ใช่หรือไม่? (งวดที่ยังไม่จ่ายจะถูกลบไปด้วย ส่วนรายการที่จ่ายไปแล้วจะยังอยู่ในประวัติเหมือนเดิม)')) return;
+  apiCall('deleteInstallmentPlan', { id }).then(() => {
+    state.installmentPlans = state.installmentPlans.filter(p => p.id !== id);
+    state.installmentPayments = state.installmentPayments.filter(p => p.planId !== id);
+    render();
+    showToast('ลบรายการผ่อนแล้ว');
+  }).catch(err => showToast('ผิดพลาด: ' + err.message));
+}
+
+function renderInstallmentCreditCatPicker() {
+  const picker = $('#installmentCreditCatPicker');
+  picker.innerHTML = '';
+  const cats = state.categories.filter(c => c.isCredit);
+  cats.forEach(c => {
+    const div = document.createElement('div');
+    div.className = 'pick' + (state.selectedInstallmentCatId === c.id ? ' selected' : '');
+    div.innerHTML = `<span>${iconFor(c)}</span>${escapeHtml(c.name)}`;
+    div.addEventListener('click', () => {
+      state.selectedInstallmentCatId = c.id;
+      renderInstallmentCreditCatPicker();
+    });
+    picker.appendChild(div);
+  });
+  if (cats.length && !cats.find(c => c.id === state.selectedInstallmentCatId)) {
+    state.selectedInstallmentCatId = cats[0].id;
+    renderInstallmentCreditCatPicker();
+  }
+}
+
+function renderInstallmentTargetCatPicker() {
+  const picker = $('#installmentTargetCatPicker');
+  picker.innerHTML = '';
+  // หมวดหมู่ปลายทางต้องเป็นรายจ่ายปกติ ไม่ใช่หมวดเครดิตอีกหมวด (ป้องกันวนลูป)
+  const cats = state.categories.filter(c => c.type === 'expense' && !c.isCredit);
+  cats.forEach(c => {
+    const div = document.createElement('div');
+    div.className = 'pick' + (state.selectedInstallmentTargetCatId === c.id ? ' selected' : '');
+    div.innerHTML = `<span>${iconFor(c)}</span>${escapeHtml(c.name)}`;
+    div.addEventListener('click', () => {
+      state.selectedInstallmentTargetCatId = c.id;
+      renderInstallmentTargetCatPicker();
+    });
+    picker.appendChild(div);
+  });
+  if (cats.length && !cats.find(c => c.id === state.selectedInstallmentTargetCatId)) {
+    state.selectedInstallmentTargetCatId = cats[0].id;
+    renderInstallmentTargetCatPicker();
+  }
+}
+
+function setInstallmentCount(n) {
+  state.installmentCount = n;
+  $$('#installmentCountPicker button').forEach(b => b.classList.toggle('active', Number(b.dataset.count) === n));
+}
+$$('#installmentCountPicker button').forEach(b => {
+  b.addEventListener('click', () => setInstallmentCount(Number(b.dataset.count)));
+});
+
+function openInstallmentModal(plan) {
+  state.editingInstallmentPlanId = plan ? plan.id : null;
+  $('#installmentModalTitle').textContent = plan ? 'แก้ไขรายการผ่อนชำระ' : 'เพิ่มรายการผ่อนชำระ';
+  state.selectedInstallmentCatId = plan ? plan.categoryId : null;
+  state.selectedInstallmentTargetCatId = plan ? plan.targetCategory : null;
+  $('#installmentName').value = plan ? plan.name : '';
+  $('#installmentTotal').value = plan ? formatAmountInput(String(plan.totalAmount)) : '';
+  $('#installmentFirstDue').value = plan ? plan.firstDueDate : todayISO();
+  setInstallmentCount(plan ? plan.installmentCount : 3);
+  renderInstallmentCreditCatPicker();
+  renderInstallmentTargetCatPicker();
+  $('#installmentOverlay').classList.add('show');
+}
+function closeInstallmentModal() {
+  $('#installmentOverlay').classList.remove('show');
+}
+$('#installmentCancelBtn').addEventListener('click', closeInstallmentModal);
+$('#installmentOverlay').addEventListener('click', (e) => { if (e.target.id === 'installmentOverlay') closeInstallmentModal(); });
+
+$('#installmentTotal').addEventListener('input', (e) => {
+  const cursorFromEnd = e.target.value.length - e.target.selectionStart;
+  e.target.value = formatAmountInput(e.target.value);
+  const pos = e.target.value.length - cursorFromEnd;
+  e.target.setSelectionRange(pos, pos);
+});
+
+$('#installmentSaveBtn').addEventListener('click', () => {
+  const name = $('#installmentName').value.trim();
+  const total = parseFloat($('#installmentTotal').value.replace(/,/g, ''));
+  const firstDue = $('#installmentFirstDue').value;
+
+  if (!state.selectedInstallmentCatId) { showToast('กรุณาเลือกหมวดหมู่เครดิต (Wallet/PayLater)'); return; }
+  if (!name) { showToast('กรุณาใส่ชื่อรายการ'); return; }
+  if (!state.selectedInstallmentTargetCatId) { showToast('กรุณาเลือกหมวดหมู่ปลายทาง'); return; }
+  if (!total || total <= 0) { showToast('กรุณาใส่ยอดรวมให้ถูกต้อง'); return; }
+  if (!firstDue) { showToast('กรุณาเลือกวันครบกำหนดงวดแรก'); return; }
+
+  const payload = {
+    categoryId: state.selectedInstallmentCatId,
+    targetCategory: state.selectedInstallmentTargetCatId,
+    name,
+    totalAmount: total,
+    installmentCount: state.installmentCount,
+    firstDueDate: firstDue,
+  };
+
+  const btn = $('#installmentSaveBtn');
+  btn.disabled = true;
+  btn.textContent = 'กำลังบันทึก…';
+
+  const isEditing = !!state.editingInstallmentPlanId;
+  const action = isEditing ? 'updateInstallmentPlan' : 'addInstallmentPlan';
+  if (isEditing) payload.id = state.editingInstallmentPlanId;
+
+  apiCall(action, payload).then(res => {
+    // แทนที่งวดเดิมของแผนนี้ด้วยงวดใหม่ที่คำนวณมาจาก backend เสมอ (ทั้งตอนสร้างและแก้ไข)
+    state.installmentPayments = state.installmentPayments.filter(p => p.planId !== res.id);
+    state.installmentPayments.push(...res.payments);
+    if (isEditing) {
+      const idx = state.installmentPlans.findIndex(p => p.id === res.id);
+      if (idx > -1) state.installmentPlans[idx] = { ...state.installmentPlans[idx], ...payload };
+    } else {
+      state.installmentPlans.push({ ...payload, id: res.id, createdAt: new Date().toISOString() });
+    }
+    closeInstallmentModal();
+    render();
+    showToast(isEditing ? 'แก้ไขรายการผ่อนแล้ว' : 'เพิ่มรายการผ่อนชำระแล้ว');
+  }).catch(err => {
+    showToast('ผิดพลาด: ' + err.message);
+  }).finally(() => {
+    btn.disabled = false;
+    btn.textContent = 'บันทึก';
+  });
+});
 
 /* ---------------- Credit category (ยอดค้างจ่าย) ---------------- */
 
