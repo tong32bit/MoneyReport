@@ -1205,6 +1205,7 @@
   }
   .credit-badge.pending { background: rgba(212, 162, 76, 0.18); color: #D4A24C; }
   .credit-badge.settled { background: rgba(163,230,53,0.15); color: var(--lime); }
+  .credit-badge.wallet { background: rgba(96, 165, 250, 0.18); color: #60A5FA; }
 
   .tx-amount.credit-pending {
     color: var(--text-faint) !important;
@@ -1252,6 +1253,52 @@
     font-size: 13.5px;
     font-weight: 700;
     padding: 10px;
+    border-radius: 10px;
+    cursor: pointer;
+  }
+
+  /* ---------- Wallet balance cards (กระเป๋าเงิน) ---------- */
+  .wallet-balance-card {
+    border-radius: 18px;
+    padding: 14px 15px;
+    margin-bottom: 10px;
+    background: rgba(96, 165, 250, 0.08);
+    border: 1px solid rgba(96, 165, 250, 0.3);
+  }
+  .wallet-balance-card .wbc-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    border-radius: 12px;
+    padding: 4px;
+    margin: -4px;
+    transition: background 0.12s;
+  }
+  .wallet-balance-card .wbc-top:hover { background: rgba(255,255,255,0.05); }
+  .wallet-balance-card .wbc-icon {
+    width: 36px; height: 36px;
+    border-radius: 12px;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    background: linear-gradient(155deg, var(--c-light), var(--c-mid));
+    border: 1px solid var(--c-border);
+  }
+  .wallet-balance-card .wbc-main { flex: 1; min-width: 0; }
+  .wallet-balance-card .wbc-name { font-size: 14.5px; font-weight: 600; color: var(--text); }
+  .wallet-balance-card .wbc-sub { font-size: 12px; color: var(--text-dim); margin-top: 1px; }
+  .wallet-balance-card .wbc-amt { font-size: 16px; font-weight: 700; color: #60A5FA; white-space: nowrap; }
+  .wallet-balance-card .wbc-amt.negative { color: var(--coral); }
+  .wallet-topup-btn {
+    width: 100%;
+    margin-top: 12px;
+    background: transparent;
+    border: 1px dashed rgba(96, 165, 250, 0.5);
+    color: #60A5FA;
+    font-size: 12.5px;
+    font-weight: 600;
+    padding: 8px;
     border-radius: 10px;
     cursor: pointer;
   }
@@ -1497,7 +1544,7 @@
       <div id="view-recurring" class="hidden">
         <div class="summary-subtabs">
           <button class="active" data-recurtab="recurring">รายจ่ายประจำ</button>
-          <button data-recurtab="credit">เครดิต/ผ่อนชำระ</button>
+          <button data-recurtab="credit">เครดิต/ผ่อน/วอลเล็ต</button>
         </div>
 
         <div id="recurringSubview-recurring">
@@ -1512,12 +1559,13 @@
         </div>
 
         <div id="recurringSubview-credit" class="hidden">
+          <div id="walletSection"></div>
           <div id="creditDueSection"></div>
           <div id="installmentSection"></div>
           <div class="empty-state hidden" id="creditEmptyState">
             <div class="glyph">💳</div>
-            <div>ยังไม่มีหมวดหมู่เครดิต</div>
-            <div class="sub">ไปที่แท็บ "หมวดหมู่" แล้วเปิดสวิตช์ "หมวดหมู่เครดิต" เพื่อเริ่มใช้งาน</div>
+            <div>ยังไม่มีหมวดหมู่เครดิตหรือกระเป๋าเงิน</div>
+            <div class="sub">ไปที่แท็บ "หมวดหมู่" แล้วเปิดสวิตช์ "หมวดหมู่เครดิต" หรือ "หมวดหมู่กระเป๋าเงิน" เพื่อเริ่มใช้งาน</div>
           </div>
         </div>
       </div>
@@ -1571,6 +1619,16 @@
       <label>หมวดหมู่ปลายทาง (ตอนจ่ายจริง)</label>
       <div class="cat-picker" id="txTargetCatPicker"></div>
     </div>
+    <div class="field hidden" id="txWalletSourceField">
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">จ่ายจากกระเป๋าเงิน (Wallet)</div>
+          <div class="toggle-hint">ยอดนี้จะไม่ตัดจากคงเหลืออีก เพราะตัดไปแล้วตอนเติมเงินเข้ากระเป๋า</div>
+        </div>
+        <div class="toggle-switch" id="txWalletToggle"><div class="toggle-knob"></div></div>
+      </div>
+      <div class="cat-picker hidden" id="txWalletSourcePicker" style="margin-top:12px;"></div>
+    </div>
     <div class="field">
       <label for="txDate">วันที่</label>
       <input type="date" id="txDate">
@@ -1618,6 +1676,15 @@
           <div class="toggle-hint">รายจ่ายในหมวดนี้จะไม่ตัดยอดทันที แต่สะสมไว้จนกว่าจะกด "จ่ายแล้ว"</div>
         </div>
         <div class="toggle-switch" id="catCreditToggle"><div class="toggle-knob"></div></div>
+      </div>
+    </div>
+    <div class="field" id="catWalletField">
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">หมวดหมู่กระเป๋าเงิน (Wallet)</div>
+          <div class="toggle-hint">ตอนเติมเงินเข้าหมวดนี้จะตัดยอดทันที ส่วนตอนใช้จ่ายจากกระเป๋าจะไม่ตัดยอดซ้ำ แต่นับรวมในหมวดหมู่ปลายทางแทน</div>
+        </div>
+        <div class="toggle-switch" id="catWalletToggle"><div class="toggle-knob"></div></div>
       </div>
     </div>
     <div class="modal-actions">
@@ -1802,7 +1869,10 @@ let state = {
   summaryMode: 'month', // 'month' | 'trend' | 'year' — ใช้ในหน้าสรุป
   selectedYear: new Date().getFullYear(),
   catIsCredit: false,
+  catIsWallet: false,
   selectedTargetCatId: null,
+  txFromWallet: false,
+  selectedWalletSourceCatId: null,
   installmentPlans: [],
   installmentPayments: [],
   expandedInstallmentIds: new Set(),
@@ -1946,6 +2016,8 @@ function renderHero() {
     // pending: ยังไม่จ่ายจริง ไม่นับ / settled: มีรายการจริงใหม่สร้างมาแทนแล้ว ถ้านับซ้ำจะเกิน
     const cat = catById(t.category);
     if (cat && cat.isCredit) return;
+    // ข้ามรายการที่จ่ายจากกระเป๋าเงิน (fromWallet) เพราะยอดถูกตัดไปแล้วตอนเติมเงินเข้ากระเป๋า ถ้านับซ้ำจะผิด
+    if (t.fromWallet) return;
     if (t.type === 'income') income += t.amount;
     else expense += t.amount;
   });
@@ -1969,6 +2041,7 @@ function renderPulse() {
     const dayTotal = state.transactions
       .filter(t => t.date === iso)
       .filter(t => { const cat = catById(t.category); return !(cat && cat.isCredit); })
+      .filter(t => !t.fromWallet)
       .reduce((sum, t) => sum + (t.type === 'income' ? t.amount : -t.amount), 0);
     points.push(dayTotal);
   }
@@ -2079,6 +2152,10 @@ function renderList() {
       const creditBadge = isCreditTx
         ? `<div class="credit-badge ${t.settled ? 'settled' : 'pending'}">${t.settled ? '✓ จ่ายแล้ว' : '⏳ ค้างจ่าย'}</div>`
         : '';
+      const walletCat = t.fromWallet ? catById(t.walletCategory) : null;
+      const walletBadge = walletCat
+        ? `<div class="credit-badge wallet">👛 จาก ${escapeHtml(walletCat.name)}</div>`
+        : '';
       const amountClass = isCreditTx && !t.settled ? `tx-amount ${t.type} credit-pending` : `tx-amount ${t.type}`;
       const li = document.createElement('li');
       li.className = 'tx-item';
@@ -2087,7 +2164,7 @@ function renderList() {
         <div class="tx-main">
           <div class="tx-cat">${escapeHtml(t.note || cat.name)}</div>
           <div class="tx-note">${escapeHtml(cat.name)}</div>
-          ${creditBadge}
+          ${creditBadge}${walletBadge}
         </div>
         <div class="${amountClass}">${t.type === 'income' ? '+' : '−'}${fmtMoney(t.amount)}</div>
       `;
@@ -2187,6 +2264,7 @@ function renderChart() {
   txs.forEach(t => {
     const cat = catById(t.category);
     if (cat && cat.isCredit) return; // หมวดเครดิตไม่นับในกราฟสรุป (ดูยอดค้างได้ในหน้าหมวดหมู่แทน)
+    if (cat && cat.isWallet) return; // เติมเงินเข้ากระเป๋าไม่นับเป็นหมวดหมู่สรุป (ยอดที่ใช้จริงจะไปนับที่หมวดหมู่ปลายทางแทน)
     totals[t.category] = (totals[t.category] || 0) + t.amount;
   });
 
@@ -2255,6 +2333,7 @@ function totalsForMonth(year, month) {
   state.transactions.forEach(t => {
     const cat = catById(t.category);
     if (cat && cat.isCredit) return; // ข้ามรายการเครดิต (ดู renderHero สำหรับเหตุผล)
+    if (t.fromWallet) return; // ข้ามรายการที่จ่ายจากกระเป๋าเงิน (นับไปแล้วตอนเติมเงิน)
     const d = new Date(t.date + 'T00:00:00');
     if (d.getFullYear() === year && d.getMonth() === month) {
       if (t.type === 'income') income += t.amount; else expense += t.amount;
@@ -2611,12 +2690,17 @@ $$('#view-recurring .summary-subtabs button[data-recurtab]').forEach(b => b.addE
 // รวมส่วนยอดค้างจ่ายเครดิต + รายการผ่อนชำระ ไว้ใน sub-tab เดียวกัน
 function renderCreditSubview() {
   const hasCreditCat = state.categories.some(c => c.isCredit);
-  $('#creditEmptyState').classList.toggle('hidden', hasCreditCat);
+  const hasWalletCat = state.categories.some(c => c.isWallet);
+  $('#creditEmptyState').classList.toggle('hidden', hasCreditCat || hasWalletCat);
   $('#creditDueSection').classList.toggle('hidden', !hasCreditCat);
   $('#installmentSection').classList.toggle('hidden', !hasCreditCat);
+  $('#walletSection').classList.toggle('hidden', !hasWalletCat);
   if (hasCreditCat) {
     renderCreditDueSection();
     renderInstallmentSection();
+  }
+  if (hasWalletCat) {
+    renderWalletSection();
   }
 }
 
@@ -3158,6 +3242,55 @@ function settleCreditCategory(catId) {
   }).catch(err => showToast('ผิดพลาด: ' + err.message));
 }
 
+/* ---------------- Wallet category (กระเป๋าเงิน) ---------------- */
+
+// ยอดคงเหลือในกระเป๋า = ยอดเติมเงินทั้งหมด (transaction ที่บันทึกตรงในหมวดหมู่นี้) - ยอดที่ใช้จ่ายจากกระเป๋านี้ (fromWallet)
+function walletBalance(catId) {
+  let toppedUp = 0, spent = 0;
+  state.transactions.forEach(t => {
+    if (t.category === catId && !t.fromWallet) toppedUp += t.amount;
+    if (t.fromWallet && t.walletCategory === catId) spent += t.amount;
+  });
+  return { toppedUp, spent, remaining: toppedUp - spent };
+}
+
+function renderWalletSection() {
+  const wrap = $('#walletSection');
+  const walletCats = state.categories.filter(c => c.isWallet);
+  if (!walletCats.length) { wrap.innerHTML = ''; return; }
+
+  const cards = walletCats.map(cat => {
+    const { toppedUp, spent, remaining } = walletBalance(cat.id);
+    const negative = remaining < 0;
+    return `
+      <div class="wallet-balance-card">
+        <div class="wbc-top" data-edit-cat="${cat.id}">
+          <div class="wbc-icon" style="${glassIconStyle(cat.color)}">${iconFor(cat)}</div>
+          <div class="wbc-main">
+            <div class="wbc-name">${escapeHtml(cat.name)}</div>
+            <div class="wbc-sub">เติมแล้ว ฿${fmtMoney(toppedUp)} · ใช้ไปแล้ว ฿${fmtMoney(spent)}</div>
+          </div>
+          <div class="wbc-amt ${negative ? 'negative' : ''}">฿${fmtMoney(remaining)}</div>
+        </div>
+        <button class="wallet-topup-btn" data-topup-cat="${cat.id}">+ เติมเงินเข้ากระเป๋า</button>
+      </div>
+    `;
+  }).join('');
+
+  wrap.innerHTML = `<div class="cat-section-title" style="margin-top:4px;">กระเป๋าเงิน</div>` + cards;
+  $$('#walletSection [data-edit-cat]').forEach(el => {
+    el.addEventListener('click', () => openCatModal(catById(el.dataset.editCat)));
+  });
+  $$('#walletSection [data-topup-cat]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openTxModal(null);
+      state.selectedCatId = btn.dataset.topupCat;
+      renderTxCatPicker();
+    });
+  });
+}
+
 function makeCatChip(c) {
   const div = document.createElement('div');
   div.className = 'cat-chip glass-soft';
@@ -3440,7 +3573,7 @@ function renderTxCatPicker() {
   cats.forEach(c => {
     const div = document.createElement('div');
     div.className = 'pick' + (state.selectedCatId === c.id ? ' selected' : '');
-    div.innerHTML = `<span>${iconFor(c)}</span>${escapeHtml(c.name)}${c.isCredit ? ' 💳' : ''}`;
+    div.innerHTML = `<span>${iconFor(c)}</span>${escapeHtml(c.name)}${c.isCredit ? ' 💳' : ''}${c.isWallet ? ' 👛' : ''}`;
     div.addEventListener('click', () => {
       state.selectedCatId = c.id;
       renderTxCatPicker();
@@ -3457,6 +3590,19 @@ function renderTxCatPicker() {
   const isCreditSelected = !!(selectedCat && selectedCat.isCredit);
   $('#txTargetCatField').classList.toggle('hidden', !isCreditSelected);
   if (isCreditSelected) renderTxTargetCatPicker();
+
+  // ถ้าเลือกหมวดหมู่ปกติ (ไม่ใช่เครดิต/กระเป๋าเงินเอง) และมีหมวดหมู่กระเป๋าเงินอยู่แล้ว
+  // ให้มีตัวเลือก "จ่ายจากกระเป๋าเงิน" เพื่อบันทึกว่ายอดนี้ไม่ตัดคงเหลือซ้ำ (ตัดไปแล้วตอนเติมเงิน)
+  const walletCats = state.categories.filter(c => c.isWallet);
+  const canUseWallet = !!selectedCat && !selectedCat.isCredit && !selectedCat.isWallet && walletCats.length > 0 && state.txType === 'expense';
+  $('#txWalletSourceField').classList.toggle('hidden', !canUseWallet);
+  if (!canUseWallet) {
+    state.txFromWallet = false;
+  } else {
+    renderTxWalletToggle();
+    $('#txWalletSourcePicker').classList.toggle('hidden', !state.txFromWallet);
+    if (state.txFromWallet) renderTxWalletSourcePicker();
+  }
 }
 
 function renderTxTargetCatPicker() {
@@ -3479,6 +3625,35 @@ function renderTxTargetCatPicker() {
   }
 }
 
+function renderTxWalletToggle() {
+  $('#txWalletToggle').classList.toggle('on', state.txFromWallet);
+}
+$('#txWalletToggle').addEventListener('click', () => {
+  state.txFromWallet = !state.txFromWallet;
+  renderTxWalletToggle();
+  $('#txWalletSourcePicker').classList.toggle('hidden', !state.txFromWallet);
+  if (state.txFromWallet) renderTxWalletSourcePicker();
+});
+
+function renderTxWalletSourcePicker() {
+  const picker = $('#txWalletSourcePicker');
+  picker.innerHTML = '';
+  const cats = state.categories.filter(c => c.isWallet);
+  cats.forEach(c => {
+    const div = document.createElement('div');
+    div.className = 'pick' + (state.selectedWalletSourceCatId === c.id ? ' selected' : '');
+    div.innerHTML = `<span>${iconFor(c)}</span>${escapeHtml(c.name)}`;
+    div.addEventListener('click', () => {
+      state.selectedWalletSourceCatId = c.id;
+      renderTxWalletSourcePicker();
+    });
+    picker.appendChild(div);
+  });
+  if (cats.length && !cats.find(c => c.id === state.selectedWalletSourceCatId)) {
+    state.selectedWalletSourceCatId = null;
+  }
+}
+
 function openTxModal(tx) {
   state.editingTxId = tx ? tx.id : null;
   $('#txModalTitle').textContent = tx ? 'แก้ไขรายการ' : 'เพิ่มรายการ';
@@ -3488,6 +3663,8 @@ function openTxModal(tx) {
   $('#txNote').value = tx ? tx.note : '';
   state.selectedCatId = tx ? tx.category : null;
   state.selectedTargetCatId = tx ? (tx.targetCategory || null) : null;
+  state.txFromWallet = tx ? !!tx.fromWallet : false;
+  state.selectedWalletSourceCatId = tx ? (tx.walletCategory || null) : null;
   setTxType(tx ? tx.type : 'expense');
   $('#txOverlay').classList.add('show');
 }
@@ -3522,12 +3699,20 @@ $('#txSaveBtn').addEventListener('click', () => {
     return;
   }
 
+  const isWalletSourceTx = !isCreditTx && state.txFromWallet && !$('#txWalletSourceField').classList.contains('hidden');
+  if (isWalletSourceTx && !state.selectedWalletSourceCatId) {
+    showToast('กรุณาเลือกกระเป๋าเงินที่ใช้จ่าย');
+    return;
+  }
+
   const payload = { date, type: state.txType, category: state.selectedCatId, amount, note };
   if (isCreditTx) {
     payload.targetCategory = state.selectedTargetCatId;
     // รายการใหม่ในหมวดเครดิตเริ่มต้นเป็น "ค้างจ่าย" เสมอ (settled=false) ส่วนรายการที่แก้ไขคง settled เดิมไว้ไม่เปลี่ยน
     if (!state.editingTxId) payload.settled = false;
   }
+  payload.fromWallet = isWalletSourceTx;
+  payload.walletCategory = isWalletSourceTx ? state.selectedWalletSourceCatId : '';
   const btn = $('#txSaveBtn');
   btn.disabled = true;
   btn.textContent = 'กำลังบันทึก…';
@@ -3570,23 +3755,45 @@ function setCatType(type) {
   state.catType = type;
   $('#catTypeExpenseBtn').classList.toggle('active', type === 'expense');
   $('#catTypeIncomeBtn').classList.toggle('active', type === 'income');
-  // หมวดหมู่เครดิตใช้ได้เฉพาะฝั่งรายจ่ายเท่านั้น (รายรับไม่มีแนวคิด "ค้างรับ")
+  // หมวดหมู่เครดิต/กระเป๋าเงินใช้ได้เฉพาะฝั่งรายจ่ายเท่านั้น (รายรับไม่มีแนวคิด "ค้างรับ"/"เติมเงิน")
   $('#catCreditField').classList.toggle('hidden', type !== 'expense');
+  $('#catWalletField').classList.toggle('hidden', type !== 'expense');
   if (type !== 'expense') {
     state.catIsCredit = false;
+    state.catIsWallet = false;
     renderCatCreditToggle();
+    renderCatWalletToggle();
   }
 }
 
 function renderCatCreditToggle() {
   $('#catCreditToggle').classList.toggle('on', state.catIsCredit);
 }
+function renderCatWalletToggle() {
+  $('#catWalletToggle').classList.toggle('on', state.catIsWallet);
+}
 $('#catCreditToggle').addEventListener('click', () => {
   state.catIsCredit = !state.catIsCredit;
+  // เครดิตกับกระเป๋าเงินเลือกได้แค่อย่างใดอย่างหนึ่งต่อหมวดหมู่
+  if (state.catIsCredit) state.catIsWallet = false;
   renderCatCreditToggle();
+  renderCatWalletToggle();
   // ตอนสร้างหมวดใหม่ ถ้าเปิดสวิตช์เครดิตและยังไม่ได้เลือกไอคอนเอง (ยังเป็นค่าเริ่มต้น) ช่วยเลือกไอคอน 💳 ให้อัตโนมัติ
   if (state.catIsCredit && !state.editingCatId && state.selectedIcon === ICON_CHOICES[0]) {
     state.selectedIcon = '💳';
+    $('#catIconCustom').value = '';
+    renderIconGrid();
+  }
+});
+$('#catWalletToggle').addEventListener('click', () => {
+  state.catIsWallet = !state.catIsWallet;
+  // เครดิตกับกระเป๋าเงินเลือกได้แค่อย่างใดอย่างหนึ่งต่อหมวดหมู่
+  if (state.catIsWallet) state.catIsCredit = false;
+  renderCatCreditToggle();
+  renderCatWalletToggle();
+  // ตอนสร้างหมวดใหม่ ถ้าเปิดสวิตช์กระเป๋าเงินและยังไม่ได้เลือกไอคอนเอง (ยังเป็นค่าเริ่มต้น) ช่วยเลือกไอคอน 👛 ให้อัตโนมัติ
+  if (state.catIsWallet && !state.editingCatId && state.selectedIcon === ICON_CHOICES[0]) {
+    state.selectedIcon = '👛';
     $('#catIconCustom').value = '';
     renderIconGrid();
   }
@@ -3644,7 +3851,9 @@ function openCatModal(cat, defaultType) {
   $('#catIconCustom').value = ICON_CHOICES.includes(state.selectedIcon) ? '' : state.selectedIcon;
   renderIconGrid();
   state.catIsCredit = cat ? !!cat.isCredit : false;
+  state.catIsWallet = cat ? !!cat.isWallet : false;
   renderCatCreditToggle();
+  renderCatWalletToggle();
   setCatType(cat ? cat.type : (defaultType || 'expense'));
   renderSwatches();
   $('#catOverlay').classList.add('show');
@@ -3660,7 +3869,11 @@ $('#catSaveBtn').addEventListener('click', () => {
   const name = $('#catName').value.trim();
   if (!name) { showToast('กรุณาใส่ชื่อหมวดหมู่'); return; }
 
-  const payload = { name, color: state.selectedColor, type: state.catType, icon: state.selectedIcon || '✦', isCredit: state.catType === 'expense' && state.catIsCredit };
+  const payload = {
+    name, color: state.selectedColor, type: state.catType, icon: state.selectedIcon || '✦',
+    isCredit: state.catType === 'expense' && state.catIsCredit,
+    isWallet: state.catType === 'expense' && state.catIsWallet,
+  };
   const btn = $('#catSaveBtn');
   btn.disabled = true;
   btn.textContent = 'กำลังบันทึก…';
