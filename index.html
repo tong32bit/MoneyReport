@@ -10,6 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   :root {
     --text: #EDEEF0;
@@ -2408,23 +2409,122 @@ function renderYearSummary() {
 $('#prevYearBtn').addEventListener('click', () => { state.selectedYear--; renderYearSummary(); });
 $('#nextYearBtn').addEventListener('click', () => { state.selectedYear++; renderYearSummary(); });
 
-/* ---------------- CSV Export ---------------- */
-function buildCsv(transactions) {
-  const header = ['วันที่', 'ประเภท', 'หมวดหมู่', 'จำนวนเงิน', 'โน้ต'];
-  const lines = [header.join(',')];
-  transactions
-    .slice()
-    .sort((a, b) => a.date.localeCompare(b.date))
-    .forEach(t => {
+/* ---------------- Excel Export (สรุปแยกตามเดือน + แยกตามหมวดหมู่) ---------------- */
+
+const EXPORT_MONTH_NAMES_ = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+
+// ชื่อชีตของแต่ละเดือน เช่น "ก.ค.69" (เดือน + ปี พ.ศ. 2 หลัก) — สั้นและไม่ชนกับกฎชื่อชีตของ Excel
+function monthSheetName_(dateIso) {
+  const d = new Date(dateIso + 'T00:00:00');
+  const buddhistYear2 = (d.getFullYear() + 543) % 100;
+  return EXPORT_MONTH_NAMES_[d.getMonth()] + String(buddhistYear2).padStart(2, '0');
+}
+
+// สร้างตารางสรุป "หมวดหมู่ x เดือน" (pivot) สำหรับประเภทที่กำหนด (expense/income)
+function buildCategoryMonthPivot_(txs, monthKeys, monthLabels, type) {
+  const totals = {}; // catId -> { monthKey -> amount }
+  txs.forEach(t => {
+    if (t.type !== type) return;
+    const mk = t.date.slice(0, 7);
+    if (!totals[t.category]) totals[t.category] = {};
+    totals[t.category][mk] = (totals[t.category][mk] || 0) + t.amount;
+  });
+
+  const catIds = Object.keys(totals).sort((a, b) => {
+    const sumA = monthKeys.reduce((s, mk) => s + (totals[a][mk] || 0), 0);
+    const sumB = monthKeys.reduce((s, mk) => s + (totals[b][mk] || 0), 0);
+    return sumB - sumA;
+  });
+
+  const header = ['หมวดหมู่', ...monthLabels, 'รวม'];
+  const rows = catIds.map(catId => {
+    const cat = catById(catId);
+    const name = cat ? cat.name : 'ไม่ทราบหมวดหมู่';
+    const values = monthKeys.map(mk => totals[catId][mk] || 0);
+    const total = values.reduce((a, b) => a + b, 0);
+    return [name, ...values, total];
+  });
+  const colSums = monthKeys.map((mk, idx) => rows.reduce((s, r) => s + r[1 + idx], 0));
+  const grandTotal = colSums.reduce((a, b) => a + b, 0);
+  const totalsRow = ['รวมทั้งหมด', ...colSums, grandTotal];
+
+  return { header, rows, totalsRow };
+}
+
+// สร้าง Workbook (SheetJS) หลายชีต: ชีต "สรุป" (pivot หมวดหมู่ x เดือน) + ชีตแยกตามเดือน (รายละเอียด + สรุปย่อยของเดือนนั้น)
+function buildWorkbook_(txs) {
+  const sorted = txs.slice().sort((a, b) => a.date.localeCompare(b.date));
+
+  const monthGroups = {}; // key "YYYY-MM" -> { label, txs: [] }
+  sorted.forEach(t => {
+    const key = t.date.slice(0, 7);
+    if (!monthGroups[key]) monthGroups[key] = { label: monthSheetName_(t.date), txs: [] };
+    monthGroups[key].txs.push(t);
+  });
+  const monthKeys = Object.keys(monthGroups).sort();
+  const monthLabels = monthKeys.map(mk => monthGroups[mk].label);
+
+  const wb = XLSX.utils.book_new();
+
+  // ---------- ชีตสรุป: หมวดหมู่ x เดือน ----------
+  const expensePivot = buildCategoryMonthPivot_(sorted, monthKeys, monthLabels, 'expense');
+  const incomePivot = buildCategoryMonthPivot_(sorted, monthKeys, monthLabels, 'income');
+  const summaryAoa = [
+    ['สรุปรายจ่ายตามหมวดหมู่ (แยกตามเดือน)'],
+    expensePivot.header,
+    ...expensePivot.rows,
+    expensePivot.totalsRow,
+    [],
+    ['สรุปรายรับตามหมวดหมู่ (แยกตามเดือน)'],
+    incomePivot.header,
+    ...incomePivot.rows,
+    incomePivot.totalsRow,
+  ];
+  const summaryWs = XLSX.utils.aoa_to_sheet(summaryAoa);
+  summaryWs['!cols'] = [{ wch: 22 }, ...monthLabels.map(() => ({ wch: 10 })), { wch: 12 }];
+  XLSX.utils.book_append_sheet(wb, summaryWs, 'สรุป');
+
+  // ---------- ชีตแยกตามเดือน ----------
+  monthKeys.forEach(mk => {
+    const group = monthGroups[mk];
+    const monthTxs = group.txs.slice().sort((a, b) => a.date.localeCompare(b.date));
+    let income = 0, expense = 0;
+    monthTxs.forEach(t => { if (t.type === 'income') income += t.amount; else expense += t.amount; });
+
+    const catBreakdown = {}; // catId -> { name, type, amount }
+    monthTxs.forEach(t => {
       const cat = catById(t.category);
-      const catName = cat ? cat.name : 'ไม่ทราบหมวดหมู่';
-      const typeLabel = t.type === 'income' ? 'รายรับ' : 'รายจ่าย';
-      const note = (t.note || '').replace(/"/g, '""');
-      // ครอบด้วย "" ทุกฟิลด์ที่อาจมีคอมมาหรือภาษาไทยปนเพื่อความปลอดภัยตอนเปิดด้วย Excel/Sheets
-      const row = [t.date, typeLabel, `"${catName}"`, t.amount, `"${note}"`];
-      lines.push(row.join(','));
+      const name = cat ? cat.name : 'ไม่ทราบหมวดหมู่';
+      if (!catBreakdown[t.category]) catBreakdown[t.category] = { name, type: t.type, amount: 0 };
+      catBreakdown[t.category].amount += t.amount;
     });
-  return '\uFEFF' + lines.join('\r\n'); // BOM นำหน้า เพื่อให้ Excel เปิดภาษาไทยได้ถูกต้องไม่เป็นอักขระแปลกๆ
+    const breakdownRows = Object.values(catBreakdown).sort((a, b) => b.amount - a.amount);
+
+    const aoa = [
+      ['สรุปเดือน ' + group.label],
+      ['รายรับรวม', income],
+      ['รายจ่ายรวม', expense],
+      ['คงเหลือสุทธิ', income - expense],
+      [],
+      ['สรุปตามหมวดหมู่'],
+      ['หมวดหมู่', 'ประเภท', 'ยอดรวม'],
+      ...breakdownRows.map(r => [r.name, r.type === 'income' ? 'รายรับ' : 'รายจ่าย', r.amount]),
+      [],
+      ['รายการทั้งหมด'],
+      ['วันที่', 'ประเภท', 'หมวดหมู่', 'จำนวนเงิน', 'โน้ต'],
+      ...monthTxs.map(t => {
+        const cat = catById(t.category);
+        const name = cat ? cat.name : 'ไม่ทราบหมวดหมู่';
+        return [t.date, t.type === 'income' ? 'รายรับ' : 'รายจ่าย', name, t.amount, t.note || ''];
+      }),
+    ];
+
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    ws['!cols'] = [{ wch: 12 }, { wch: 10 }, { wch: 20 }, { wch: 12 }, { wch: 30 }];
+    XLSX.utils.book_append_sheet(wb, ws, group.label.slice(0, 31));
+  });
+
+  return wb;
 }
 
 async function exportCsv() {
@@ -2436,14 +2536,39 @@ async function exportCsv() {
     showToast('ไม่มีข้อมูลให้ส่งออก');
     return;
   }
-  const csv = buildCsv(txs);
-  const filename = isYearMode ? `รายการ-ปี-${state.selectedYear}.csv` : `รายการ-ทั้งหมด.csv`;
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  if (!window.XLSX) {
+    showToast('โหลดไลบรารี Excel ไม่สำเร็จ ลองใหม่อีกครั้ง');
+    return;
+  }
 
-  // ลองใช้ Web Share API ก่อน (เปิด share sheet ของ iOS ให้เลือกส่งไป Files/อีเมล/LINE)
-  // ถ้าเบราว์เซอร์ไม่รองรับการแชร์ไฟล์ ให้ fallback เป็นดาวน์โหลดตรงแทน
+  const wb = buildWorkbook_(txs);
+  const filename = isYearMode ? `รายการ-ปี-${state.selectedYear}.xlsx` : `รายการ-ทั้งหมด.xlsx`;
+  const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+  const mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+  const blob = new Blob([wbout], { type: mimeType });
+
+  // วิธีที่ 1: File System Access API — เปิดหน้าต่างเลือกโฟลเดอร์ + ตั้งชื่อไฟล์ของเครื่องได้ตรงๆ เหมือนโปรแกรมทั่วไป
+  // รองรับบน Chrome/Edge (เดสก์ท็อป และ Android บางเวอร์ชัน) แต่ Safari/iOS ยังไม่รองรับ API นี้
+  if (window.showSaveFilePicker) {
+    try {
+      const handle = await window.showSaveFilePicker({
+        suggestedName: filename,
+        types: [{ description: 'Excel file', accept: { [mimeType]: ['.xlsx'] } }],
+      });
+      const writable = await handle.createWritable();
+      await writable.write(blob);
+      await writable.close();
+      showToast('บันทึกไฟล์ Excel แล้ว');
+      return;
+    } catch (err) {
+      if (err && err.name === 'AbortError') return; // ผู้ใช้กดยกเลิกหน้าต่างเลือกโฟลเดอร์เอง ไม่ต้องแจ้ง error
+      // ถ้า error อื่น (เช่น browser ใบ้ว่ารองรับแต่ใช้งานจริงไม่ได้) ให้ตกไปลองวิธีถัดไปแทน ไม่ต้องหยุดการทำงาน
+    }
+  }
+
+  // วิธีที่ 2: Web Share API (เปิด share sheet ของ iOS ให้เลือกส่งไป Files แล้วเลือกโฟลเดอร์ปลายทางเองได้/อีเมล/LINE)
   try {
-    const file = new File([blob], filename, { type: 'text/csv' });
+    const file = new File([blob], filename, { type: mimeType });
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       await navigator.share({ files: [file], title: filename });
       return;
@@ -2452,7 +2577,7 @@ async function exportCsv() {
     if (err && err.name === 'AbortError') return; // ผู้ใช้กดยกเลิก share sheet เอง ไม่ต้องแจ้ง error
   }
 
-  // Fallback: ดาวน์โหลดไฟล์ตรง
+  // วิธีที่ 3: Fallback ดาวน์โหลดไฟล์ตรง (เข้าโฟลเดอร์ดาวน์โหลดเริ่มต้นของเบราว์เซอร์)
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -2461,7 +2586,7 @@ async function exportCsv() {
   a.click();
   a.remove();
   URL.revokeObjectURL(url);
-  showToast('บันทึกไฟล์ CSV แล้ว');
+  showToast('บันทึกไฟล์ Excel แล้ว');
 }
 
 $('#exportCsvBtn').addEventListener('click', exportCsv);
