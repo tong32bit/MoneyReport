@@ -427,6 +427,30 @@
   }
   .search-status b { color: var(--text); }
 
+  /* ---------- Daily/Weekly list view toggle ---------- */
+  .list-mode-toggle {
+    display: flex;
+    gap: 6px;
+    margin: 2px 0 12px;
+  }
+  .list-mode-toggle button {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--glass-soft-border);
+    color: var(--text-dim);
+    font-size: 12.5px;
+    font-weight: 600;
+    padding: 7px 13px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .list-mode-toggle button.active {
+    background: rgba(255,255,255,0.14);
+    color: #fff;
+    border-color: rgba(255,255,255,0.2);
+  }
+  .list-mode-toggle.disabled { opacity: 0.4; pointer-events: none; }
+
   .day-group { margin-bottom: 4px; }
   .day-heading {
     font-size: 12px;
@@ -435,6 +459,88 @@
     text-transform: uppercase;
     letter-spacing: 0.5px;
   }
+  /* ---------- Collapsible day accordion (โหมดรายวัน) ---------- */
+  .day-heading-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 4px 6px;
+    cursor: pointer;
+    border-radius: 10px;
+  }
+  .day-heading-row:hover { background: rgba(255,255,255,0.03); }
+  .day-chevron {
+    font-size: 11px;
+    color: var(--text-faint);
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+  }
+  .day-chevron.expanded { transform: rotate(90deg); }
+  .day-heading-text {
+    flex: 1;
+    font-size: 12px;
+    color: var(--text-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .day-subtotal {
+    font-size: 12.5px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-dim);
+  }
+  .day-subtotal.positive { color: var(--lime); }
+  .day-subtotal.negative { color: var(--coral); }
+  .day-panel {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+  }
+  .day-panel.show { max-height: 4000px; }
+
+  /* ---------- Weekly grouping ---------- */
+  .week-group { margin-bottom: 6px; }
+  .week-heading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 12px;
+    margin-bottom: 4px;
+    border-radius: 14px;
+    cursor: pointer;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--glass-soft-border);
+  }
+  .week-heading:hover { background: rgba(255,255,255,0.07); }
+  .week-chevron {
+    font-size: 12px;
+    color: var(--text-dim);
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+  }
+  .week-chevron.expanded { transform: rotate(90deg); }
+  .week-range {
+    flex: 1;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .week-total {
+    font-size: 14px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-dim);
+  }
+  .week-total.positive { color: var(--lime); }
+  .week-total.negative { color: var(--coral); }
+  .week-panel {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+    padding-left: 4px;
+  }
+  .week-panel.show { max-height: 8000px; }
+
   .tx-list { list-style: none; padding: 0; margin: 0; }
   .tx-item {
     display: flex;
@@ -1499,6 +1605,10 @@
           <button class="filter-btn" id="filterCatBtn" aria-label="กรองตามหมวดหมู่">▾</button>
         </div>
         <div class="search-status hidden" id="searchStatus"></div>
+        <div class="list-mode-toggle" id="listModeToggle">
+          <button class="active" data-listmode="daily">รายวัน</button>
+          <button data-listmode="weekly">รายสัปดาห์</button>
+        </div>
         <div id="txGroups"></div>
         <div class="empty-state hidden" id="emptyState">
           <div class="glyph">○</div>
@@ -1882,7 +1992,20 @@ let state = {
   installmentCount: 3,
   editingInstallmentPlanId: null,
   recurringSubTab: 'recurring', // 'recurring' | 'credit' — sub-tab ในหน้า "ประจำ"
+  listViewMode: 'daily', // 'daily' | 'weekly' — มุมมองหน้ารายการ
+  expandedDayKeys: new Set(), // dateISO ที่กางอยู่ (โหมดรายวัน)
+  expandedWeekKeys: new Set(), // weekStartISO ที่กางอยู่ (โหมดรายสัปดาห์)
 };
+
+// ค่าเริ่มต้น: กางเฉพาะวันนี้/เมื่อวาน (โหมดรายวัน) และสัปดาห์นี้ (โหมดรายสัปดาห์) ส่วนอื่นพับไว้
+(function initDefaultExpandedKeys_() {
+  const today = todayISO();
+  state.expandedDayKeys.add(today);
+  const y = new Date();
+  y.setDate(y.getDate() - 1);
+  state.expandedDayKeys.add(y.getFullYear() + '-' + String(y.getMonth() + 1).padStart(2, '0') + '-' + String(y.getDate()).padStart(2, '0'));
+  state.expandedWeekKeys.add(weekStartISO(today));
+})();
 
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => Array.from(document.querySelectorAll(sel));
@@ -2100,6 +2223,46 @@ function dayHeadingLabel(iso, crossMonth) {
   return d.toLocaleDateString('th-TH', { weekday: 'short', day: 'numeric', month: 'short', year: crossMonth ? 'numeric' : undefined });
 }
 
+// คืนยอดสุทธิ (รายรับ-รายจ่าย) ของ items กลุ่มหนึ่ง พร้อม class สีสำหรับแสดงผล (ไม่นับรายการเครดิตที่ยังค้างจ่าย/จ่ายจากกระเป๋าเงิน ให้ตรงกับยอดคงเหลือจริง)
+function netSubtotal_(items) {
+  let net = 0;
+  items.forEach(t => {
+    const cat = catById(t.category);
+    if (cat && cat.isCredit && !t.settled) return;
+    if (t.fromWallet) return;
+    net += t.type === 'income' ? t.amount : -t.amount;
+  });
+  const cls = net > 0 ? 'positive' : (net < 0 ? 'negative' : '');
+  const sign = net > 0 ? '+' : (net < 0 ? '−' : '');
+  return { net, cls, label: sign + fmtMoney(Math.abs(net)) };
+}
+
+// วันจันทร์ของสัปดาห์ที่ iso อยู่ (ISO week, จันทร์-อาทิตย์) คืนเป็น "YYYY-MM-DD"
+function weekStartISO(iso) {
+  const d = new Date(iso + 'T00:00:00');
+  const day = d.getDay(); // 0=อาทิตย์ ... 6=เสาร์
+  const diffToMonday = (day === 0 ? -6 : 1 - day);
+  d.setDate(d.getDate() + diffToMonday);
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
+// ป้ายชื่อช่วงสัปดาห์ เช่น "1 - 7 ก.ค." หรือ "สัปดาห์นี้" / "สัปดาห์ที่แล้ว"
+function weekRangeLabel(weekStart) {
+  const start = new Date(weekStart + 'T00:00:00');
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+  const thisWeekStart = weekStartISO(todayISO());
+  const diffWeeks = Math.round((new Date(thisWeekStart) - start) / (7 * 86400000));
+
+  const startLabel = start.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
+  const endLabel = end.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
+  const rangeLabel = `${startLabel} - ${endLabel}`;
+
+  if (diffWeeks === 0) return `สัปดาห์นี้ · ${rangeLabel}`;
+  if (diffWeeks === 1) return `สัปดาห์ที่แล้ว · ${rangeLabel}`;
+  return rangeLabel;
+}
+
 function isSearchActive() {
   return state.searchQuery.trim() !== '' || state.filterCatIds.length > 0;
 }
@@ -2116,11 +2279,97 @@ function getSearchResults() {
   });
 }
 
+// สร้าง <ul class="tx-list"> จาก items (ใช้ร่วมกันทั้งโหมดรายวัน/รายสัปดาห์)
+function buildTxListEl(items) {
+  const ul = document.createElement('ul');
+  ul.className = 'tx-list';
+  items.forEach(t => {
+    const cat = catById(t.category) || { name: 'ไม่ทราบหมวดหมู่', color: '#888888' };
+    const isCreditTx = !!cat.isCredit;
+    const creditBadge = isCreditTx
+      ? `<div class="credit-badge ${t.settled ? 'settled' : 'pending'}">${t.settled ? '✓ จ่ายแล้ว' : '⏳ ค้างจ่าย'}</div>`
+      : '';
+    const walletCat = t.fromWallet ? catById(t.walletCategory) : null;
+    const walletBadge = walletCat
+      ? `<div class="credit-badge wallet">👛 จาก ${escapeHtml(walletCat.name)}</div>`
+      : '';
+    const amountClass = isCreditTx && !t.settled ? `tx-amount ${t.type} credit-pending` : `tx-amount ${t.type}`;
+    const li = document.createElement('li');
+    li.className = 'tx-item';
+    li.innerHTML = `
+      <div class="tx-icon" style="${glassIconStyle(cat.color)}">${iconFor(cat)}</div>
+      <div class="tx-main">
+        <div class="tx-cat">${escapeHtml(t.note || cat.name)}</div>
+        <div class="tx-note">${escapeHtml(cat.name)}</div>
+        ${creditBadge}${walletBadge}
+      </div>
+      <div class="${amountClass}">${t.type === 'income' ? '+' : '−'}${fmtMoney(t.amount)}</div>
+    `;
+    li.addEventListener('click', () => openTxModal(t));
+    ul.appendChild(li);
+  });
+  return ul;
+}
+
+// กลุ่มของหนึ่งวัน — collapsible=true ใช้ตอนอยู่ในโหมดรายวัน (พับ/กางได้ + มีปุ่มยอดสุทธิ)
+// collapsible=false ใช้ตอนค้นหา หรือใช้เป็นกลุ่มย่อยภายในสัปดาห์ (แสดงหัวข้อเฉยๆ ไม่ต้องพับซ้อนกัน)
+function buildDayGroupEl(dateIso, items, { crossMonth = false, collapsible = false } = {}) {
+  items = items.slice().sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+  const group = document.createElement('div');
+  group.className = 'day-group';
+
+  if (!collapsible) {
+    group.innerHTML = `<div class="day-heading">${dayHeadingLabel(dateIso, crossMonth)}</div>`;
+    group.appendChild(buildTxListEl(items));
+    return group;
+  }
+
+  const isExpanded = state.expandedDayKeys.has(dateIso);
+  const { cls, label } = netSubtotal_(items);
+  const heading = document.createElement('div');
+  heading.className = 'day-heading-row';
+  heading.innerHTML = `
+    <span class="day-chevron ${isExpanded ? 'expanded' : ''}">›</span>
+    <span class="day-heading-text">${dayHeadingLabel(dateIso, crossMonth)}</span>
+    <span class="day-subtotal ${cls}">${label}</span>
+  `;
+  heading.addEventListener('click', () => toggleDayExpand(dateIso));
+  group.appendChild(heading);
+
+  const panel = document.createElement('div');
+  panel.className = 'day-panel' + (isExpanded ? ' show' : '');
+  panel.appendChild(buildTxListEl(items));
+  group.appendChild(panel);
+  return group;
+}
+
+function toggleDayExpand(dateIso) {
+  if (state.expandedDayKeys.has(dateIso)) state.expandedDayKeys.delete(dateIso);
+  else state.expandedDayKeys.add(dateIso);
+  renderList();
+}
+
+function toggleWeekExpand(weekStart) {
+  if (state.expandedWeekKeys.has(weekStart)) state.expandedWeekKeys.delete(weekStart);
+  else state.expandedWeekKeys.add(weekStart);
+  renderList();
+}
+
+function setListViewMode(mode) {
+  state.listViewMode = mode;
+  $$('#listModeToggle button[data-listmode]').forEach(b => b.classList.toggle('active', b.dataset.listmode === mode));
+  renderList();
+}
+$$('#listModeToggle button[data-listmode]').forEach(b => b.addEventListener('click', () => setListViewMode(b.dataset.listmode)));
+
 function renderList() {
   const searching = isSearchActive();
   const txs = searching ? getSearchResults() : txInCurrentMonth();
   const container = $('#txGroups');
   container.innerHTML = '';
+
+  // ตอนค้นหาอยู่ บังคับใช้มุมมองรายวันแบบเรียบง่ายเสมอ (ไม่พับ/ไม่จัดสัปดาห์) เพื่อให้เห็นผลลัพธ์ค้นหาทันที
+  $('#listModeToggle').classList.toggle('disabled', searching);
 
   const statusEl = $('#searchStatus');
   if (searching) {
@@ -2139,41 +2388,58 @@ function renderList() {
     return;
   }
 
-  const grouped = groupByDay(txs);
-  grouped.forEach(([dateIso, items]) => {
-    items.sort((a,b) => (b.createdAt||'').localeCompare(a.createdAt||''));
-    const group = document.createElement('div');
-    group.className = 'day-group';
-    group.innerHTML = `<div class="day-heading">${dayHeadingLabel(dateIso, searching)}</div>`;
-    const ul = document.createElement('ul');
-    ul.className = 'tx-list';
-    items.forEach(t => {
-      const cat = catById(t.category) || { name: 'ไม่ทราบหมวดหมู่', color: '#888888' };
-      const isCreditTx = !!cat.isCredit;
-      const creditBadge = isCreditTx
-        ? `<div class="credit-badge ${t.settled ? 'settled' : 'pending'}">${t.settled ? '✓ จ่ายแล้ว' : '⏳ ค้างจ่าย'}</div>`
-        : '';
-      const walletCat = t.fromWallet ? catById(t.walletCategory) : null;
-      const walletBadge = walletCat
-        ? `<div class="credit-badge wallet">👛 จาก ${escapeHtml(walletCat.name)}</div>`
-        : '';
-      const amountClass = isCreditTx && !t.settled ? `tx-amount ${t.type} credit-pending` : `tx-amount ${t.type}`;
-      const li = document.createElement('li');
-      li.className = 'tx-item';
-      li.innerHTML = `
-        <div class="tx-icon" style="${glassIconStyle(cat.color)}">${iconFor(cat)}</div>
-        <div class="tx-main">
-          <div class="tx-cat">${escapeHtml(t.note || cat.name)}</div>
-          <div class="tx-note">${escapeHtml(cat.name)}</div>
-          ${creditBadge}${walletBadge}
-        </div>
-        <div class="${amountClass}">${t.type === 'income' ? '+' : '−'}${fmtMoney(t.amount)}</div>
-      `;
-      li.addEventListener('click', () => openTxModal(t));
-      ul.appendChild(li);
+  const grouped = groupByDay(txs); // [[dateIso, items], ...] เรียงล่าสุดก่อน
+
+  if (searching) {
+    grouped.forEach(([dateIso, items]) => {
+      container.appendChild(buildDayGroupEl(dateIso, items, { crossMonth: true, collapsible: false }));
     });
-    group.appendChild(ul);
-    container.appendChild(group);
+    return;
+  }
+
+  if (state.listViewMode === 'daily') {
+    grouped.forEach(([dateIso, items]) => {
+      container.appendChild(buildDayGroupEl(dateIso, items, { crossMonth: false, collapsible: true }));
+    });
+    return;
+  }
+
+  // โหมดรายสัปดาห์: จัดกลุ่มวันที่เข้าสัปดาห์ (จันทร์-อาทิตย์) แล้วห่อด้วย wrapper ที่พับ/กางได้
+  const weekMap = {}; // weekStart -> { items: [...ทุก tx ในสัปดาห์], days: [[dateIso, items], ...] }
+  grouped.forEach(([dateIso, items]) => {
+    const ws = weekStartISO(dateIso);
+    if (!weekMap[ws]) weekMap[ws] = { items: [], days: [] };
+    weekMap[ws].items.push(...items);
+    weekMap[ws].days.push([dateIso, items]);
+  });
+  const weekKeys = Object.keys(weekMap).sort((a, b) => b.localeCompare(a));
+
+  weekKeys.forEach(ws => {
+    const { items, days } = weekMap[ws];
+    const isExpanded = state.expandedWeekKeys.has(ws);
+    const { cls, label } = netSubtotal_(items);
+
+    const weekGroup = document.createElement('div');
+    weekGroup.className = 'week-group';
+
+    const heading = document.createElement('div');
+    heading.className = 'week-heading';
+    heading.innerHTML = `
+      <span class="week-chevron ${isExpanded ? 'expanded' : ''}">›</span>
+      <span class="week-range">${weekRangeLabel(ws)}</span>
+      <span class="week-total ${cls}">${label}</span>
+    `;
+    heading.addEventListener('click', () => toggleWeekExpand(ws));
+    weekGroup.appendChild(heading);
+
+    const panel = document.createElement('div');
+    panel.className = 'week-panel' + (isExpanded ? ' show' : '');
+    days.forEach(([dateIso, dayItems]) => {
+      panel.appendChild(buildDayGroupEl(dateIso, dayItems, { crossMonth: false, collapsible: false }));
+    });
+    weekGroup.appendChild(panel);
+
+    container.appendChild(weekGroup);
   });
 }
 
