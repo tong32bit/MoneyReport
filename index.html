@@ -1313,6 +1313,7 @@
   .credit-badge.pending { background: rgba(212, 162, 76, 0.18); color: #D4A24C; }
   .credit-badge.settled { background: rgba(163,230,53,0.15); color: var(--lime); }
   .credit-badge.wallet { background: rgba(96, 165, 250, 0.18); color: #60A5FA; }
+  .credit-badge.job { background: rgba(45, 212, 191, 0.18); color: #2DD4BF; }
 
   .tx-amount.credit-pending {
     color: var(--text-faint) !important;
@@ -1406,6 +1407,117 @@
     font-size: 12.5px;
     font-weight: 600;
     padding: 8px;
+    border-radius: 10px;
+    cursor: pointer;
+  }
+
+  /* ---------- Reimbursement cards (รอเบิกคืน) ---------- */
+  .reimb-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-radius: 16px;
+    padding: 12px;
+    margin-bottom: 8px;
+    background: rgba(192, 132, 252, 0.08);
+    border: 1px solid rgba(192, 132, 252, 0.3);
+  }
+  .reimb-card .reimb-icon {
+    width: 42px; height: 42px;
+    border-radius: 14px;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 19px;
+    background: linear-gradient(155deg, var(--c-light), var(--c-mid));
+    backdrop-filter: blur(6px);
+    border: 1px solid var(--c-border);
+    box-shadow: 0 4px 14px var(--c-shadow), inset 0 1px 0 rgba(255,255,255,0.3);
+  }
+  .reimb-card .reimb-main { flex: 1; min-width: 0; }
+  .reimb-card .reimb-name { font-size: 15px; font-weight: 600; color: var(--text); }
+  .reimb-card .reimb-sub { font-size: 12.5px; color: var(--text-dim); margin-top: 1px; }
+  .reimb-card .reimb-amt { font-size: 16px; font-weight: 700; color: #C084FC; white-space: nowrap; }
+  .reimb-settle-btn {
+    flex-shrink: 0;
+    background: linear-gradient(135deg, #C084FC, #E0B0FF);
+    color: #2A0E3D;
+    border: none;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 8px 12px;
+    border-radius: 9px;
+    cursor: pointer;
+  }
+  .reimb-total-banner {
+    border-radius: 16px;
+    padding: 13px 14px;
+    margin-bottom: 14px;
+    background: rgba(192, 132, 252, 0.1);
+    border: 1px solid rgba(192, 132, 252, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .reimb-total-banner .rtb-label { font-size: 12.5px; color: var(--text-dim); }
+  .reimb-total-banner .rtb-amt { font-size: 19px; font-weight: 700; color: #C084FC; }
+  .reimb-history-toggle {
+    background: transparent;
+    border: none;
+    color: var(--text-faint);
+    font-size: 12.5px;
+    font-weight: 600;
+    padding: 8px 2px;
+    cursor: pointer;
+    margin-top: 4px;
+  }
+  .reimb-history-toggle:hover { color: var(--text-dim); }
+
+  /* ---------- Contract job cards (งานเหมา) ---------- */
+  .job-card {
+    border-radius: 18px;
+    padding: 14px 15px;
+    margin-bottom: 10px;
+    background: rgba(45, 212, 191, 0.08);
+    border: 1px solid rgba(45, 212, 191, 0.3);
+  }
+  .job-card .jc-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+  }
+  .job-card .jc-icon {
+    width: 36px; height: 36px;
+    border-radius: 12px;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    background: linear-gradient(155deg, var(--c-light), var(--c-mid));
+    border: 1px solid var(--c-border);
+  }
+  .job-card .jc-main { flex: 1; min-width: 0; }
+  .job-card .jc-name { font-size: 14.5px; font-weight: 600; color: var(--text); }
+  .job-card .jc-sub { font-size: 12px; color: var(--text-dim); margin-top: 1px; }
+  .job-card .jc-amt { font-size: 16px; font-weight: 700; color: #2DD4BF; white-space: nowrap; }
+  .job-card .jc-amt.negative { color: var(--coral); }
+  .job-breakdown {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255,255,255,0.08);
+  }
+  .job-close-btn {
+    width: 100%;
+    margin-top: 12px;
+    background: linear-gradient(135deg, #2DD4BF, #5EEAD4);
+    color: #04302A;
+    border: none;
+    font-size: 12.5px;
+    font-weight: 700;
+    padding: 9px;
     border-radius: 10px;
     cursor: pointer;
   }
@@ -1656,6 +1768,8 @@
         <div class="summary-subtabs">
           <button class="active" data-recurtab="recurring">รายจ่ายประจำ</button>
           <button data-recurtab="credit">เครดิต/ผ่อน/วอลเล็ต</button>
+          <button data-recurtab="reimbursement">รอเบิกคืน</button>
+          <button data-recurtab="job">งานเหมา</button>
         </div>
 
         <div id="recurringSubview-recurring">
@@ -1677,6 +1791,24 @@
             <div class="glyph">💳</div>
             <div>ยังไม่มีหมวดหมู่เครดิตหรือกระเป๋าเงิน</div>
             <div class="sub">ไปที่แท็บ "หมวดหมู่" แล้วเปิดสวิตช์ "หมวดหมู่เครดิต" หรือ "หมวดหมู่กระเป๋าเงิน" เพื่อเริ่มใช้งาน</div>
+          </div>
+        </div>
+
+        <div id="recurringSubview-reimbursement" class="hidden">
+          <div id="reimbursementSection"></div>
+          <div class="empty-state hidden" id="reimbursementEmptyState">
+            <div class="glyph">🧾</div>
+            <div>ยังไม่มีหมวดหมู่รอเบิกคืน</div>
+            <div class="sub">ไปที่แท็บ "หมวดหมู่" แล้วเปิดสวิตช์ "หมวดหมู่รอเบิกคืน" เพื่อเริ่มใช้งาน</div>
+          </div>
+        </div>
+
+        <div id="recurringSubview-job" class="hidden">
+          <div id="jobSection"></div>
+          <div class="empty-state hidden" id="jobEmptyState">
+            <div class="glyph">🤝</div>
+            <div>ยังไม่มีหมวดหมู่งานเหมา</div>
+            <div class="sub">ไปที่แท็บ "หมวดหมู่" (ฝั่งรายรับ) แล้วเปิดสวิตช์ "หมวดหมู่งานเหมา" เพื่อเริ่มใช้งาน</div>
           </div>
         </div>
       </div>
@@ -1730,6 +1862,10 @@
       <label>หมวดหมู่ปลายทาง (ตอนจ่ายจริง)</label>
       <div class="cat-picker" id="txTargetCatPicker"></div>
     </div>
+    <div class="field hidden" id="txJobTargetCatField">
+      <label>หมวดหมู่รายได้ปลายทาง (ตอนปิดงาน)</label>
+      <div class="cat-picker" id="txJobTargetCatPicker"></div>
+    </div>
     <div class="field hidden" id="txWalletSourceField">
       <div class="toggle-row">
         <div>
@@ -1739,6 +1875,16 @@
         <div class="toggle-switch" id="txWalletToggle"><div class="toggle-knob"></div></div>
       </div>
       <div class="cat-picker hidden" id="txWalletSourcePicker" style="margin-top:12px;"></div>
+    </div>
+    <div class="field hidden" id="txJobSourceField">
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">จ่ายจากยอดงานเหมา</div>
+          <div class="toggle-hint">ยอดนี้เป็นต้นทุนของงานเหมา จะไม่นับเป็นรายจ่ายส่วนตัว แต่ยังตัดจากคงเหลือตามจริง</div>
+        </div>
+        <div class="toggle-switch" id="txJobToggle"><div class="toggle-knob"></div></div>
+      </div>
+      <div class="cat-picker hidden" id="txJobSourcePicker" style="margin-top:12px;"></div>
     </div>
     <div class="field">
       <label for="txDate">วันที่</label>
@@ -1796,6 +1942,24 @@
           <div class="toggle-hint">ตอนเติมเงินเข้าหมวดนี้จะตัดยอดทันที ส่วนตอนใช้จ่ายจากกระเป๋าจะไม่ตัดยอดซ้ำ แต่นับรวมในหมวดหมู่ปลายทางแทน</div>
         </div>
         <div class="toggle-switch" id="catWalletToggle"><div class="toggle-knob"></div></div>
+      </div>
+    </div>
+    <div class="field" id="catReimbursementField">
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">หมวดหมู่รอเบิกคืน</div>
+          <div class="toggle-hint">จ่าย/รับเงินจริงจึงมีผลกับคงเหลือทันที แต่จะไม่นับเป็นรายจ่าย/รายรับในสถิติ เพราะเป็นเงินที่จ่ายแทนคนอื่นแล้วรอเบิกคืน ไม่ใช่รายจ่าย-รายรับจริงของเรา</div>
+        </div>
+        <div class="toggle-switch" id="catReimbursementToggle"><div class="toggle-knob"></div></div>
+      </div>
+    </div>
+    <div class="field hidden" id="catContractJobField">
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">หมวดหมู่งานเหมา</div>
+          <div class="toggle-hint">รับเงินก้อนเข้าหมวดนี้จะมีผลกับคงเหลือทันที แต่ยังไม่นับเป็นรายได้ จนกว่าจะกด "ปิดงาน" เพื่อหักลบยอดที่จ่ายทีมงานแล้วรับรู้เฉพาะกำไรสุทธิเป็นรายได้จริง</div>
+        </div>
+        <div class="toggle-switch" id="catContractJobToggle"><div class="toggle-knob"></div></div>
       </div>
     </div>
     <div class="modal-actions">
@@ -1950,7 +2114,7 @@ const ICON_CHOICES = [
   '🎬', '🐱', '🎁', '💰', '✦', '🍺',
   '📹', '💧', '🍚',
   // ไอคอนสำหรับหมวด wallet / เครดิต / PayLater (True Money, G-Wallet, Shopee/TikTok PayLater ฯลฯ)
-  '💳', '👛', '💸', '🛒', '🎵', '📲', '🅿️', '🧧',
+  '💳', '👛', '💸', '🛒', '🎵', '📲', '🅿️', '🧧', '🧾', '🤝',
 ];
 function iconFor(cat) { return (cat && cat.icon) || '✦'; }
 
@@ -1981,12 +2145,17 @@ let state = {
   selectedYear: new Date().getFullYear(),
   catIsCredit: false,
   catIsWallet: false,
+  catIsReimbursement: false,
+  catIsContractJob: false,
   selectedTargetCatId: null,
   txFromWallet: false,
   selectedWalletSourceCatId: null,
+  txFromContractJob: false,
+  selectedJobSourceCatId: null,
   installmentPlans: [],
   installmentPayments: [],
   expandedInstallmentIds: new Set(),
+  expandedReimbHistory: false,
   selectedInstallmentCatId: null,
   selectedInstallmentTargetCatId: null,
   installmentCount: 3,
@@ -2111,6 +2280,8 @@ function render() {
 function renderRecurringView() {
   if (state.recurringSubTab === 'recurring') renderRecurring();
   if (state.recurringSubTab === 'credit') renderCreditSubview();
+  if (state.recurringSubTab === 'reimbursement') renderReimbursementSubview();
+  if (state.recurringSubTab === 'job') renderJobSubview();
 }
 
 function renderSummaryView() {
@@ -2134,7 +2305,7 @@ function catById(id) {
 
 function renderHero() {
   const txs = txInCurrentMonth();
-  let income = 0, expense = 0;
+  let income = 0, expense = 0, offBalance = 0;
   txs.forEach(t => {
     // ข้ามรายการในหมวดหมู่เครดิตทั้งหมด (ทั้งที่ยังค้างจ่ายและจ่ายแล้ว)
     // pending: ยังไม่จ่ายจริง ไม่นับ / settled: มีรายการจริงใหม่สร้างมาแทนแล้ว ถ้านับซ้ำจะเกิน
@@ -2142,12 +2313,25 @@ function renderHero() {
     if (cat && cat.isCredit) return;
     // ข้ามรายการที่จ่ายจากกระเป๋าเงิน (fromWallet) เพราะยอดถูกตัดไปแล้วตอนเติมเงินเข้ากระเป๋า ถ้านับซ้ำจะผิด
     if (t.fromWallet) return;
+    // รายการรับรู้ยอดสุทธิตอนปิดงานเหมา (excludeFromBalance): นับเป็นรายรับ/รายจ่ายในสถิติตามปกติ
+    // แต่ไม่กระทบ "คงเหลือ" ซ้ำ เพราะเงินจริงถูกนับไปแล้วตอนรับเงิน/จ่ายทีมงานแต่ละครั้ง
+    if (t.excludeFromBalance) {
+      if (t.type === 'income') income += t.amount;
+      else expense += t.amount;
+      return;
+    }
+    // เงินทดรองจ่าย/รอเบิกคืน และรายรับ-รายจ่ายของงานเหมา: เงินเข้า-ออกจริงจากบัญชี จึงมีผลกับ "คงเหลือ"
+    // แต่ยังไม่นับเป็นรายรับ/รายจ่ายในสถิติจนกว่าจะรู้ยอดสุทธิ (เก็บแยกไว้ใน offBalance)
+    if ((cat && cat.isReimbursement) || (cat && cat.isContractJob) || t.fromContractJob) {
+      offBalance += t.type === 'income' ? t.amount : -t.amount;
+      return;
+    }
     if (t.type === 'income') income += t.amount;
     else expense += t.amount;
   });
   $('#sumIncome').textContent = '+' + fmtMoney(income);
   $('#sumExpense').textContent = '-' + fmtMoney(expense);
-  $('#sumBalance').textContent = fmtMoney(income - expense);
+  $('#sumBalance').textContent = fmtMoney(income - expense + offBalance);
   renderPulse();
 }
 
@@ -2166,6 +2350,7 @@ function renderPulse() {
       .filter(t => t.date === iso)
       .filter(t => { const cat = catById(t.category); return !(cat && cat.isCredit); })
       .filter(t => !t.fromWallet)
+      .filter(t => !t.excludeFromBalance)
       .reduce((sum, t) => sum + (t.type === 'income' ? t.amount : -t.amount), 0);
     points.push(dayTotal);
   }
@@ -2223,13 +2408,17 @@ function dayHeadingLabel(iso, crossMonth) {
   return d.toLocaleDateString('th-TH', { weekday: 'short', day: 'numeric', month: 'short', year: crossMonth ? 'numeric' : undefined });
 }
 
-// คืนยอดสุทธิ (รายรับ-รายจ่าย) ของ items กลุ่มหนึ่ง พร้อม class สีสำหรับแสดงผล (ไม่นับรายการเครดิตที่ยังค้างจ่าย/จ่ายจากกระเป๋าเงิน ให้ตรงกับยอดคงเหลือจริง)
+// คืนยอดสุทธิ (รายรับ-รายจ่าย) ของ items กลุ่มหนึ่ง พร้อม class สีสำหรับแสดงผล
+// คืนยอดสุทธิ (รายรับ-รายจ่าย) ของ items กลุ่มหนึ่ง พร้อม class สีสำหรับแสดงผล
+// (ไม่นับรายการเครดิตที่ยังไม่ได้ตัดยอดจริง, รายการที่จ่ายจากกระเป๋าเงิน, หรือรายการรับรู้ยอดสุทธิตอนปิดงานเหมา
+//  ให้ตรงกับยอดคงเหลือจริงเหมือน renderHero — ส่วนรายการเงินทดรองจ่าย/รอเบิกคืน และงานเหมา นับรวมด้วย เพราะเป็นเงินเข้า-ออกจริงจากบัญชี)
 function netSubtotal_(items) {
   let net = 0;
   items.forEach(t => {
     const cat = catById(t.category);
-    if (cat && cat.isCredit && !t.settled) return;
+    if (cat && cat.isCredit) return;
     if (t.fromWallet) return;
+    if (t.excludeFromBalance) return;
     net += t.type === 'income' ? t.amount : -t.amount;
   });
   const cls = net > 0 ? 'positive' : (net < 0 ? 'negative' : '');
@@ -2293,6 +2482,19 @@ function buildTxListEl(items) {
     const walletBadge = walletCat
       ? `<div class="credit-badge wallet">👛 จาก ${escapeHtml(walletCat.name)}</div>`
       : '';
+    const isReimbursementTx = !!cat.isReimbursement;
+    const reimbursementBadge = isReimbursementTx
+      ? `<div class="credit-badge ${t.settled ? 'settled' : 'pending'}">${t.settled ? '✓ ' + (t.type === 'income' ? 'ได้รับคืนแล้ว' : 'เบิกคืนแล้ว') : '🧾 รอเบิกคืน'}</div>`
+      : '';
+    const jobSourceCat = t.fromContractJob ? catById(t.contractJobCategory) : null;
+    let jobBadge = '';
+    if (cat.isContractJob) {
+      jobBadge = `<div class="credit-badge ${t.settled ? 'settled' : 'job'}">${t.settled ? '✓ ปิดงานแล้ว' : '🤝 รอปิดงาน'}</div>`;
+    } else if (jobSourceCat) {
+      jobBadge = `<div class="credit-badge ${t.settled ? 'settled' : 'job'}">🤝 ต้นทุนงาน: ${escapeHtml(jobSourceCat.name)}</div>`;
+    } else if (t.excludeFromBalance) {
+      jobBadge = `<div class="credit-badge settled">✓ รับรู้รายได้สุทธิ</div>`;
+    }
     const amountClass = isCreditTx && !t.settled ? `tx-amount ${t.type} credit-pending` : `tx-amount ${t.type}`;
     const li = document.createElement('li');
     li.className = 'tx-item';
@@ -2301,7 +2503,7 @@ function buildTxListEl(items) {
       <div class="tx-main">
         <div class="tx-cat">${escapeHtml(t.note || cat.name)}</div>
         <div class="tx-note">${escapeHtml(cat.name)}</div>
-        ${creditBadge}${walletBadge}
+        ${creditBadge}${walletBadge}${reimbursementBadge}${jobBadge}
       </div>
       <div class="${amountClass}">${t.type === 'income' ? '+' : '−'}${fmtMoney(t.amount)}</div>
     `;
@@ -2532,6 +2734,8 @@ function renderChart() {
     const cat = catById(t.category);
     if (cat && cat.isCredit) return; // หมวดเครดิตไม่นับในกราฟสรุป (ดูยอดค้างได้ในหน้าหมวดหมู่แทน)
     if (cat && cat.isWallet) return; // เติมเงินเข้ากระเป๋าไม่นับเป็นหมวดหมู่สรุป (ยอดที่ใช้จริงจะไปนับที่หมวดหมู่ปลายทางแทน)
+    if (cat && cat.isReimbursement) return; // เงินทดรองจ่ายไม่ใช่รายจ่ายจริงของเรา ไม่นับในกราฟสรุป
+    if (t.fromContractJob) return; // ต้นทุนงานเหมาไม่ใช่รายจ่ายส่วนตัว ไม่นับในกราฟสรุป
     totals[t.category] = (totals[t.category] || 0) + t.amount;
   });
 
@@ -2600,6 +2804,9 @@ function totalsForMonth(year, month) {
   state.transactions.forEach(t => {
     const cat = catById(t.category);
     if (cat && cat.isCredit) return; // ข้ามรายการเครดิต (ดู renderHero สำหรับเหตุผล)
+    if (cat && cat.isReimbursement) return; // ข้ามรายการรอเบิกคืน (ไม่ใช่รายจ่าย-รายรับจริงของเรา)
+    if (cat && cat.isContractJob) return; // ข้ามรายรับงานเหมาที่ยังไม่ปิดงาน (ไม่ใช่รายได้จริงจนกว่าจะรู้ยอดสุทธิ)
+    if (t.fromContractJob) return; // ข้ามต้นทุนงานเหมา (ไม่ใช่รายจ่ายส่วนตัว)
     if (t.fromWallet) return; // ข้ามรายการที่จ่ายจากกระเป๋าเงิน (นับไปแล้วตอนเติมเงิน)
     const d = new Date(t.date + 'T00:00:00');
     if (d.getFullYear() === year && d.getMonth() === month) {
@@ -3074,6 +3281,8 @@ function setRecurringSubTab(tab) {
   $$('#view-recurring .summary-subtabs button[data-recurtab]').forEach(b => b.classList.toggle('active', b.dataset.recurtab === tab));
   $('#recurringSubview-recurring').classList.toggle('hidden', tab !== 'recurring');
   $('#recurringSubview-credit').classList.toggle('hidden', tab !== 'credit');
+  $('#recurringSubview-reimbursement').classList.toggle('hidden', tab !== 'reimbursement');
+  $('#recurringSubview-job').classList.toggle('hidden', tab !== 'job');
   renderRecurringView();
 }
 $$('#view-recurring .summary-subtabs button[data-recurtab]').forEach(b => b.addEventListener('click', () => setRecurringSubTab(b.dataset.recurtab)));
@@ -3682,6 +3891,181 @@ function renderWalletSection() {
   });
 }
 
+/* ---------------- Reimbursement category (เงินทดรองจ่าย / รอเบิกคืน) ---------------- */
+
+function renderReimbursementSubview() {
+  const wrap = $('#reimbursementSection');
+  const reimbCats = state.categories.filter(c => c.isReimbursement);
+  const hasReimbCat = reimbCats.length > 0;
+  $('#reimbursementEmptyState').classList.toggle('hidden', hasReimbCat);
+  wrap.classList.toggle('hidden', !hasReimbCat);
+  if (!hasReimbCat) { wrap.innerHTML = ''; return; }
+
+  const reimbCatIds = new Set(reimbCats.map(c => c.id));
+  // ขาจ่ายทดรองที่ยังไม่ได้รับคืน (type expense, ยังไม่ settled)
+  const pendingTxs = state.transactions
+    .filter(t => reimbCatIds.has(t.category) && t.type === 'expense' && !t.settled)
+    .sort((a, b) => a.date.localeCompare(b.date));
+  // ประวัติที่ได้รับเงินคืนแล้ว (รายการที่ระบบสร้างให้ตอนกด "ได้รับคืนแล้ว" เป็น type income)
+  const receivedTxs = state.transactions
+    .filter(t => reimbCatIds.has(t.category) && t.type === 'income')
+    .sort((a, b) => b.date.localeCompare(a.date));
+
+  const totalPending = pendingTxs.reduce((s, t) => s + t.amount, 0);
+
+  let html = `
+    <div class="reimb-total-banner">
+      <div class="rtb-label">ยอดรอเบิกคืนทั้งหมด</div>
+      <div class="rtb-amt">฿${fmtMoney(totalPending)}</div>
+    </div>
+  `;
+
+  if (!pendingTxs.length) {
+    html += `<div class="chart-group-empty">ยังไม่มีรายการที่รอเบิกคืน</div>`;
+  } else {
+    html += pendingTxs.map(t => {
+      const cat = catById(t.category) || { name: 'ไม่ทราบหมวดหมู่', color: '#888888' };
+      return `
+        <div class="reimb-card">
+          <div class="reimb-icon" style="${glassIconStyle(cat.color)}">${iconFor(cat)}</div>
+          <div class="reimb-main">
+            <div class="reimb-name">${escapeHtml(t.note || cat.name)}</div>
+            <div class="reimb-sub">${escapeHtml(cat.name)} · จ่ายเมื่อ ${fmtDateShort_(t.date)}</div>
+          </div>
+          <div class="reimb-amt">฿${fmtMoney(t.amount)}</div>
+          <button class="reimb-settle-btn" data-mark-reimbursed="${t.id}">ได้รับคืนแล้ว</button>
+        </div>
+      `;
+    }).join('');
+  }
+
+  if (receivedTxs.length) {
+    const isExpanded = state.expandedReimbHistory;
+    html += `<button class="reimb-history-toggle" id="reimbHistoryToggle">${isExpanded ? '▾' : '▸'} ประวัติที่ได้รับคืนแล้ว (${receivedTxs.length})</button>`;
+    if (isExpanded) {
+      html += receivedTxs.map(t => {
+        const cat = catById(t.category) || { name: 'ไม่ทราบหมวดหมู่', color: '#888888' };
+        return `
+          <div class="reimb-card" style="opacity:0.65;">
+            <div class="reimb-icon" style="${glassIconStyle(cat.color)}">${iconFor(cat)}</div>
+            <div class="reimb-main">
+              <div class="reimb-name">${escapeHtml(t.note || cat.name)}</div>
+              <div class="reimb-sub">ได้รับคืนเมื่อ ${fmtDateShort_(t.date)}</div>
+            </div>
+            <div class="reimb-amt">฿${fmtMoney(t.amount)}</div>
+          </div>
+        `;
+      }).join('');
+    }
+  }
+
+  wrap.innerHTML = html;
+  $$('#reimbursementSection [data-mark-reimbursed]').forEach(btn => {
+    btn.addEventListener('click', () => markReimbursed(btn.dataset.markReimbursed));
+  });
+  const historyToggle = $('#reimbHistoryToggle');
+  if (historyToggle) {
+    historyToggle.addEventListener('click', () => {
+      state.expandedReimbHistory = !state.expandedReimbHistory;
+      renderReimbursementSubview();
+    });
+  }
+}
+
+function markReimbursed(transactionId) {
+  const tx = state.transactions.find(t => t.id === transactionId);
+  if (!tx) return;
+  if (!confirm(`ยืนยันว่าได้รับเงินคืนสำหรับ "${tx.note || ''}" จำนวน ฿${fmtMoney(tx.amount)} แล้วใช่หรือไม่?`)) return;
+
+  const date = todayISO();
+  apiCall('markReimbursed', { transactionId, date }).then(res => {
+    tx.settled = true;
+    state.transactions.push({ ...res.newTransaction, createdAt: new Date().toISOString() });
+    render();
+    showToast('บันทึกว่าได้รับเงินคืนแล้ว');
+  }).catch(err => showToast('ผิดพลาด: ' + err.message));
+}
+
+/* ---------------- Contract job (งานเหมา) ---------------- */
+
+function renderJobSubview() {
+  const wrap = $('#jobSection');
+  const jobCats = state.categories.filter(c => c.isContractJob);
+  const hasJobCat = jobCats.length > 0;
+  $('#jobEmptyState').classList.toggle('hidden', hasJobCat);
+  wrap.classList.toggle('hidden', !hasJobCat);
+  if (!hasJobCat) { wrap.innerHTML = ''; return; }
+
+  const cards = jobCats.map(cat => {
+    const pendingReceipts = state.transactions.filter(t => t.category === cat.id && t.type === 'income' && !t.settled);
+    const pendingPayments = state.transactions.filter(t => t.fromContractJob && t.contractJobCategory === cat.id && !t.settled);
+    const gross = pendingReceipts.reduce((s, t) => s + t.amount, 0);
+    const paid = pendingPayments.reduce((s, t) => s + t.amount, 0);
+    const net = gross - paid;
+
+    if (!pendingReceipts.length) {
+      return `
+        <div class="job-card">
+          <div class="jc-top">
+            <div class="jc-icon" style="${glassIconStyle(cat.color)}">${iconFor(cat)}</div>
+            <div class="jc-main">
+              <div class="jc-name">${escapeHtml(cat.name)}</div>
+              <div class="jc-sub">ไม่มีงานที่รอปิด</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="job-card">
+        <div class="jc-top">
+          <div class="jc-icon" style="${glassIconStyle(cat.color)}">${iconFor(cat)}</div>
+          <div class="jc-main">
+            <div class="jc-name">${escapeHtml(cat.name)}</div>
+            <div class="jc-sub">${pendingReceipts.length} รายรับ · ${pendingPayments.length} รายจ่ายทีม</div>
+          </div>
+          <div class="jc-amt ${net < 0 ? 'negative' : ''}">฿${fmtMoney(net)}</div>
+        </div>
+        <div class="job-breakdown">
+          <span>รับเข้ามา ฿${fmtMoney(gross)}</span>
+          <span>จ่ายทีมไป ฿${fmtMoney(paid)}</span>
+        </div>
+        <button class="job-close-btn" data-close-job="${cat.id}">ปิดงานและรับรู้รายได้สุทธิ</button>
+      </div>
+    `;
+  }).join('');
+
+  wrap.innerHTML = `<div class="cat-section-title" style="margin-top:4px;">งานเหมา</div>` + cards;
+  $$('#jobSection [data-close-job]').forEach(btn => {
+    btn.addEventListener('click', () => closeContractJob(btn.dataset.closeJob));
+  });
+}
+
+function closeContractJob(categoryId) {
+  const cat = catById(categoryId);
+  const pendingReceipts = state.transactions.filter(t => t.category === categoryId && t.type === 'income' && !t.settled);
+  const pendingPayments = state.transactions.filter(t => t.fromContractJob && t.contractJobCategory === categoryId && !t.settled);
+  if (!pendingReceipts.length) { showToast('ไม่มีงานที่รอปิด'); return; }
+
+  const gross = pendingReceipts.reduce((s, t) => s + t.amount, 0);
+  const paid = pendingPayments.reduce((s, t) => s + t.amount, 0);
+  const net = gross - paid;
+
+  if (!confirm(`ปิดงาน "${cat ? cat.name : ''}" — รับเข้ามา ฿${fmtMoney(gross)} หักต้นทุน ฿${fmtMoney(paid)} เหลือรายได้สุทธิ ฿${fmtMoney(net)} ใช่หรือไม่?`)) return;
+
+  const date = todayISO();
+  apiCall('closeContractJob', { categoryId, date }).then(res => {
+    const settledIds = new Set(res.settledTransactionIds || []);
+    state.transactions.forEach(t => {
+      if (settledIds.has(t.id)) t.settled = true;
+    });
+    state.transactions.push({ ...res.newTransaction, createdAt: new Date().toISOString() });
+    render();
+    showToast('ปิดงานและรับรู้รายได้สุทธิแล้ว');
+  }).catch(err => showToast('ผิดพลาด: ' + err.message));
+}
+
 function makeCatChip(c) {
   const div = document.createElement('div');
   div.className = 'cat-chip glass-soft';
@@ -3964,7 +4348,7 @@ function renderTxCatPicker() {
   cats.forEach(c => {
     const div = document.createElement('div');
     div.className = 'pick' + (state.selectedCatId === c.id ? ' selected' : '');
-    div.innerHTML = `<span>${iconFor(c)}</span>${escapeHtml(c.name)}${c.isCredit ? ' 💳' : ''}${c.isWallet ? ' 👛' : ''}`;
+    div.innerHTML = `<span>${iconFor(c)}</span>${escapeHtml(c.name)}${c.isCredit ? ' 💳' : ''}${c.isWallet ? ' 👛' : ''}${c.isReimbursement ? ' 🧾' : ''}${c.isContractJob ? ' 🤝' : ''}`;
     div.addEventListener('click', () => {
       state.selectedCatId = c.id;
       renderTxCatPicker();
@@ -3982,10 +4366,15 @@ function renderTxCatPicker() {
   $('#txTargetCatField').classList.toggle('hidden', !isCreditSelected);
   if (isCreditSelected) renderTxTargetCatPicker();
 
+  // ถ้าเลือกหมวดหมู่งานเหมา ต้องให้ระบุหมวดหมู่รายได้ปลายทางด้วย (ไว้ใช้ตอนกด "ปิดงาน")
+  const isJobSelected = !!(selectedCat && selectedCat.isContractJob);
+  $('#txJobTargetCatField').classList.toggle('hidden', !isJobSelected);
+  if (isJobSelected) renderTxJobTargetCatPicker();
+
   // ถ้าเลือกหมวดหมู่ปกติ (ไม่ใช่เครดิต/กระเป๋าเงินเอง) และมีหมวดหมู่กระเป๋าเงินอยู่แล้ว
   // ให้มีตัวเลือก "จ่ายจากกระเป๋าเงิน" เพื่อบันทึกว่ายอดนี้ไม่ตัดคงเหลือซ้ำ (ตัดไปแล้วตอนเติมเงิน)
   const walletCats = state.categories.filter(c => c.isWallet);
-  const canUseWallet = !!selectedCat && !selectedCat.isCredit && !selectedCat.isWallet && walletCats.length > 0 && state.txType === 'expense';
+  const canUseWallet = !!selectedCat && !selectedCat.isCredit && !selectedCat.isWallet && !selectedCat.isReimbursement && walletCats.length > 0 && state.txType === 'expense';
   $('#txWalletSourceField').classList.toggle('hidden', !canUseWallet);
   if (!canUseWallet) {
     state.txFromWallet = false;
@@ -3993,6 +4382,68 @@ function renderTxCatPicker() {
     renderTxWalletToggle();
     $('#txWalletSourcePicker').classList.toggle('hidden', !state.txFromWallet);
     if (state.txFromWallet) renderTxWalletSourcePicker();
+  }
+
+  // ถ้าเลือกหมวดหมู่ปกติฝั่งรายจ่าย และมีหมวดหมู่งานเหมาอยู่แล้ว
+  // ให้มีตัวเลือก "จ่ายจากยอดงานเหมา" เพื่อบันทึกว่ายอดนี้เป็นต้นทุนของงานเหมา ไม่ใช่รายจ่ายส่วนตัว
+  const jobCats = state.categories.filter(c => c.isContractJob);
+  const canUseJob = !!selectedCat && !selectedCat.isCredit && !selectedCat.isWallet && !selectedCat.isReimbursement && jobCats.length > 0 && state.txType === 'expense';
+  $('#txJobSourceField').classList.toggle('hidden', !canUseJob);
+  if (!canUseJob) {
+    state.txFromContractJob = false;
+  } else {
+    renderTxJobToggle();
+    $('#txJobSourcePicker').classList.toggle('hidden', !state.txFromContractJob);
+    if (state.txFromContractJob) renderTxJobSourcePicker();
+  }
+}
+
+function renderTxJobTargetCatPicker() {
+  const picker = $('#txJobTargetCatPicker');
+  picker.innerHTML = '';
+  // หมวดหมู่รายได้ปลายทางต้องเป็นรายรับปกติ ไม่ใช่หมวดงานเหมาอีกหมวด (ป้องกันวนลูป)
+  const cats = state.categories.filter(c => c.type === 'income' && !c.isContractJob);
+  cats.forEach(c => {
+    const div = document.createElement('div');
+    div.className = 'pick' + (state.selectedTargetCatId === c.id ? ' selected' : '');
+    div.innerHTML = `<span>${iconFor(c)}</span>${escapeHtml(c.name)}`;
+    div.addEventListener('click', () => {
+      state.selectedTargetCatId = c.id;
+      renderTxJobTargetCatPicker();
+    });
+    picker.appendChild(div);
+  });
+  if (cats.length && !cats.find(c => c.id === state.selectedTargetCatId)) {
+    state.selectedTargetCatId = null;
+  }
+}
+
+function renderTxJobToggle() {
+  $('#txJobToggle').classList.toggle('on', state.txFromContractJob);
+}
+$('#txJobToggle').addEventListener('click', () => {
+  state.txFromContractJob = !state.txFromContractJob;
+  renderTxJobToggle();
+  $('#txJobSourcePicker').classList.toggle('hidden', !state.txFromContractJob);
+  if (state.txFromContractJob) renderTxJobSourcePicker();
+});
+
+function renderTxJobSourcePicker() {
+  const picker = $('#txJobSourcePicker');
+  picker.innerHTML = '';
+  const cats = state.categories.filter(c => c.isContractJob);
+  cats.forEach(c => {
+    const div = document.createElement('div');
+    div.className = 'pick' + (state.selectedJobSourceCatId === c.id ? ' selected' : '');
+    div.innerHTML = `<span>${iconFor(c)}</span>${escapeHtml(c.name)}`;
+    div.addEventListener('click', () => {
+      state.selectedJobSourceCatId = c.id;
+      renderTxJobSourcePicker();
+    });
+    picker.appendChild(div);
+  });
+  if (cats.length && !cats.find(c => c.id === state.selectedJobSourceCatId)) {
+    state.selectedJobSourceCatId = null;
   }
 }
 
@@ -4056,6 +4507,8 @@ function openTxModal(tx) {
   state.selectedTargetCatId = tx ? (tx.targetCategory || null) : null;
   state.txFromWallet = tx ? !!tx.fromWallet : false;
   state.selectedWalletSourceCatId = tx ? (tx.walletCategory || null) : null;
+  state.txFromContractJob = tx ? !!tx.fromContractJob : false;
+  state.selectedJobSourceCatId = tx ? (tx.contractJobCategory || null) : null;
   setTxType(tx ? tx.type : 'expense');
   $('#txOverlay').classList.add('show');
 }
@@ -4090,20 +4543,36 @@ $('#txSaveBtn').addEventListener('click', () => {
     return;
   }
 
+  const isJobReceiptTx = !!(selectedCat && selectedCat.isContractJob);
+  if (isJobReceiptTx && !state.selectedTargetCatId) {
+    showToast('กรุณาเลือกหมวดหมู่รายได้ปลายทางสำหรับรายรับงานเหมานี้');
+    return;
+  }
+
   const isWalletSourceTx = !isCreditTx && state.txFromWallet && !$('#txWalletSourceField').classList.contains('hidden');
   if (isWalletSourceTx && !state.selectedWalletSourceCatId) {
     showToast('กรุณาเลือกกระเป๋าเงินที่ใช้จ่าย');
     return;
   }
 
+  const isJobSourceTx = !isCreditTx && !isWalletSourceTx && state.txFromContractJob && !$('#txJobSourceField').classList.contains('hidden');
+  if (isJobSourceTx && !state.selectedJobSourceCatId) {
+    showToast('กรุณาเลือกงานเหมาที่จ่ายต้นทุนนี้');
+    return;
+  }
+
   const payload = { date, type: state.txType, category: state.selectedCatId, amount, note };
-  if (isCreditTx) {
+  if (isCreditTx || isJobReceiptTx) {
     payload.targetCategory = state.selectedTargetCatId;
+  }
+  if (isCreditTx) {
     // รายการใหม่ในหมวดเครดิตเริ่มต้นเป็น "ค้างจ่าย" เสมอ (settled=false) ส่วนรายการที่แก้ไขคง settled เดิมไว้ไม่เปลี่ยน
     if (!state.editingTxId) payload.settled = false;
   }
   payload.fromWallet = isWalletSourceTx;
   payload.walletCategory = isWalletSourceTx ? state.selectedWalletSourceCatId : '';
+  payload.fromContractJob = isJobSourceTx;
+  payload.contractJobCategory = isJobSourceTx ? state.selectedJobSourceCatId : '';
   const btn = $('#txSaveBtn');
   btn.disabled = true;
   btn.textContent = 'กำลังบันทึก…';
@@ -4146,14 +4615,23 @@ function setCatType(type) {
   state.catType = type;
   $('#catTypeExpenseBtn').classList.toggle('active', type === 'expense');
   $('#catTypeIncomeBtn').classList.toggle('active', type === 'income');
-  // หมวดหมู่เครดิต/กระเป๋าเงินใช้ได้เฉพาะฝั่งรายจ่ายเท่านั้น (รายรับไม่มีแนวคิด "ค้างรับ"/"เติมเงิน")
+  // หมวดหมู่เครดิต/กระเป๋าเงิน/รอเบิกคืนใช้ได้เฉพาะฝั่งรายจ่ายเท่านั้น (รายรับไม่มีแนวคิด "ค้างรับ"/"เติมเงิน"/"ทดรองจ่าย")
   $('#catCreditField').classList.toggle('hidden', type !== 'expense');
   $('#catWalletField').classList.toggle('hidden', type !== 'expense');
+  $('#catReimbursementField').classList.toggle('hidden', type !== 'expense');
+  // หมวดหมู่งานเหมาใช้ได้เฉพาะฝั่งรายรับเท่านั้น (สลับข้างกับ 3 อันข้างบน)
+  $('#catContractJobField').classList.toggle('hidden', type !== 'income');
   if (type !== 'expense') {
     state.catIsCredit = false;
     state.catIsWallet = false;
+    state.catIsReimbursement = false;
     renderCatCreditToggle();
     renderCatWalletToggle();
+    renderCatReimbursementToggle();
+  }
+  if (type !== 'income') {
+    state.catIsContractJob = false;
+    renderCatContractJobToggle();
   }
 }
 
@@ -4163,12 +4641,19 @@ function renderCatCreditToggle() {
 function renderCatWalletToggle() {
   $('#catWalletToggle').classList.toggle('on', state.catIsWallet);
 }
+function renderCatReimbursementToggle() {
+  $('#catReimbursementToggle').classList.toggle('on', state.catIsReimbursement);
+}
+function renderCatContractJobToggle() {
+  $('#catContractJobToggle').classList.toggle('on', state.catIsContractJob);
+}
 $('#catCreditToggle').addEventListener('click', () => {
   state.catIsCredit = !state.catIsCredit;
-  // เครดิตกับกระเป๋าเงินเลือกได้แค่อย่างใดอย่างหนึ่งต่อหมวดหมู่
-  if (state.catIsCredit) state.catIsWallet = false;
+  // เครดิต/กระเป๋าเงิน/รอเบิกคืน เลือกได้แค่อย่างใดอย่างหนึ่งต่อหมวดหมู่
+  if (state.catIsCredit) { state.catIsWallet = false; state.catIsReimbursement = false; }
   renderCatCreditToggle();
   renderCatWalletToggle();
+  renderCatReimbursementToggle();
   // ตอนสร้างหมวดใหม่ ถ้าเปิดสวิตช์เครดิตและยังไม่ได้เลือกไอคอนเอง (ยังเป็นค่าเริ่มต้น) ช่วยเลือกไอคอน 💳 ให้อัตโนมัติ
   if (state.catIsCredit && !state.editingCatId && state.selectedIcon === ICON_CHOICES[0]) {
     state.selectedIcon = '💳';
@@ -4178,13 +4663,38 @@ $('#catCreditToggle').addEventListener('click', () => {
 });
 $('#catWalletToggle').addEventListener('click', () => {
   state.catIsWallet = !state.catIsWallet;
-  // เครดิตกับกระเป๋าเงินเลือกได้แค่อย่างใดอย่างหนึ่งต่อหมวดหมู่
-  if (state.catIsWallet) state.catIsCredit = false;
+  // เครดิต/กระเป๋าเงิน/รอเบิกคืน เลือกได้แค่อย่างใดอย่างหนึ่งต่อหมวดหมู่
+  if (state.catIsWallet) { state.catIsCredit = false; state.catIsReimbursement = false; }
   renderCatCreditToggle();
   renderCatWalletToggle();
+  renderCatReimbursementToggle();
   // ตอนสร้างหมวดใหม่ ถ้าเปิดสวิตช์กระเป๋าเงินและยังไม่ได้เลือกไอคอนเอง (ยังเป็นค่าเริ่มต้น) ช่วยเลือกไอคอน 👛 ให้อัตโนมัติ
   if (state.catIsWallet && !state.editingCatId && state.selectedIcon === ICON_CHOICES[0]) {
     state.selectedIcon = '👛';
+    $('#catIconCustom').value = '';
+    renderIconGrid();
+  }
+});
+$('#catReimbursementToggle').addEventListener('click', () => {
+  state.catIsReimbursement = !state.catIsReimbursement;
+  // เครดิต/กระเป๋าเงิน/รอเบิกคืน เลือกได้แค่อย่างใดอย่างหนึ่งต่อหมวดหมู่
+  if (state.catIsReimbursement) { state.catIsCredit = false; state.catIsWallet = false; }
+  renderCatCreditToggle();
+  renderCatWalletToggle();
+  renderCatReimbursementToggle();
+  // ตอนสร้างหมวดใหม่ ถ้าเปิดสวิตช์รอเบิกคืนและยังไม่ได้เลือกไอคอนเอง (ยังเป็นค่าเริ่มต้น) ช่วยเลือกไอคอน 🧾 ให้อัตโนมัติ
+  if (state.catIsReimbursement && !state.editingCatId && state.selectedIcon === ICON_CHOICES[0]) {
+    state.selectedIcon = '🧾';
+    $('#catIconCustom').value = '';
+    renderIconGrid();
+  }
+});
+$('#catContractJobToggle').addEventListener('click', () => {
+  state.catIsContractJob = !state.catIsContractJob;
+  renderCatContractJobToggle();
+  // ตอนสร้างหมวดใหม่ ถ้าเปิดสวิตช์งานเหมาและยังไม่ได้เลือกไอคอนเอง (ยังเป็นค่าเริ่มต้น) ช่วยเลือกไอคอน 🤝 ให้อัตโนมัติ
+  if (state.catIsContractJob && !state.editingCatId && state.selectedIcon === ICON_CHOICES[0]) {
+    state.selectedIcon = '🤝';
     $('#catIconCustom').value = '';
     renderIconGrid();
   }
@@ -4243,8 +4753,12 @@ function openCatModal(cat, defaultType) {
   renderIconGrid();
   state.catIsCredit = cat ? !!cat.isCredit : false;
   state.catIsWallet = cat ? !!cat.isWallet : false;
+  state.catIsReimbursement = cat ? !!cat.isReimbursement : false;
+  state.catIsContractJob = cat ? !!cat.isContractJob : false;
   renderCatCreditToggle();
   renderCatWalletToggle();
+  renderCatReimbursementToggle();
+  renderCatContractJobToggle();
   setCatType(cat ? cat.type : (defaultType || 'expense'));
   renderSwatches();
   $('#catOverlay').classList.add('show');
@@ -4264,6 +4778,8 @@ $('#catSaveBtn').addEventListener('click', () => {
     name, color: state.selectedColor, type: state.catType, icon: state.selectedIcon || '✦',
     isCredit: state.catType === 'expense' && state.catIsCredit,
     isWallet: state.catType === 'expense' && state.catIsWallet,
+    isReimbursement: state.catType === 'expense' && state.catIsReimbursement,
+    isContractJob: state.catType === 'income' && state.catIsContractJob,
   };
   const btn = $('#catSaveBtn');
   btn.disabled = true;
