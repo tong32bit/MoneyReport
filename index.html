@@ -2305,33 +2305,36 @@ function catById(id) {
 
 function renderHero() {
   const txs = txInCurrentMonth();
-  let income = 0, expense = 0, offBalance = 0;
+  // แยกตัวสะสม 2 ชุดออกจากกันเด็ดขาด: incomeLabel/expenseLabel ใช้โชว์ตัวเลข "รายรับ"/"รายจ่าย" เท่านั้น
+  // ส่วน balance คือยอดคงเหลือจริง คำนวณแยกต่างหาก ไม่ได้มาจากการลบ incomeLabel-expenseLabel
+  // (ถ้าใช้ตัวแปรร่วมกัน รายการที่ excludeFromBalance จะถูกนับเข้า balance ซ้ำผ่าน incomeLabel/expenseLabel โดยไม่ตั้งใจ)
+  let incomeLabel = 0, expenseLabel = 0, balance = 0;
   txs.forEach(t => {
-    // ข้ามรายการในหมวดหมู่เครดิตทั้งหมด (ทั้งที่ยังค้างจ่ายและจ่ายแล้ว)
-    // pending: ยังไม่จ่ายจริง ไม่นับ / settled: มีรายการจริงใหม่สร้างมาแทนแล้ว ถ้านับซ้ำจะเกิน
+    // ข้ามรายการในหมวดหมู่เครดิตทั้งหมด (ทั้งที่ยังค้างจ่ายและจ่ายแล้ว) — ไม่กระทบทั้ง label และ balance
     const cat = catById(t.category);
     if (cat && cat.isCredit) return;
-    // ข้ามรายการที่จ่ายจากกระเป๋าเงิน (fromWallet) เพราะยอดถูกตัดไปแล้วตอนเติมเงินเข้ากระเป๋า ถ้านับซ้ำจะผิด
+    // ข้ามรายการที่จ่ายจากกระเป๋าเงิน (fromWallet) — ไม่กระทบทั้ง label และ balance (นับไปแล้วตอนเติมเงิน)
     if (t.fromWallet) return;
-    // รายการรับรู้ยอดสุทธิตอนปิดงานเหมา (excludeFromBalance): นับเป็นรายรับ/รายจ่ายในสถิติตามปกติ
-    // แต่ไม่กระทบ "คงเหลือ" ซ้ำ เพราะเงินจริงถูกนับไปแล้วตอนรับเงิน/จ่ายทีมงานแต่ละครั้ง
+    // รายการรับรู้ยอดสุทธิตอนปิดงานเหมา (excludeFromBalance): นับเป็นรายรับ/รายจ่ายใน label เท่านั้น
+    // ไม่กระทบ "คงเหลือ" ซ้ำ เพราะเงินจริงถูกนับไปแล้วตอนรับเงิน/จ่ายทีมงานแต่ละครั้ง
     if (t.excludeFromBalance) {
-      if (t.type === 'income') income += t.amount;
-      else expense += t.amount;
+      if (t.type === 'income') incomeLabel += t.amount;
+      else expenseLabel += t.amount;
       return;
     }
-    // เงินทดรองจ่าย/รอเบิกคืน และรายรับ-รายจ่ายของงานเหมา: เงินเข้า-ออกจริงจากบัญชี จึงมีผลกับ "คงเหลือ"
-    // แต่ยังไม่นับเป็นรายรับ/รายจ่ายในสถิติจนกว่าจะรู้ยอดสุทธิ (เก็บแยกไว้ใน offBalance)
+    // เงินทดรองจ่าย/รอเบิกคืน และรายรับ-รายจ่ายของงานเหมา: เงินเข้า-ออกจริงจากบัญชี จึงมีผลกับ "คงเหลือ" เท่านั้น
+    // แต่ยังไม่นับเป็นรายรับ/รายจ่ายใน label จนกว่าจะรู้ยอดสุทธิ
     if ((cat && cat.isReimbursement) || (cat && cat.isContractJob) || t.fromContractJob) {
-      offBalance += t.type === 'income' ? t.amount : -t.amount;
+      balance += t.type === 'income' ? t.amount : -t.amount;
       return;
     }
-    if (t.type === 'income') income += t.amount;
-    else expense += t.amount;
+    // รายการปกติ: กระทบทั้ง label และ balance
+    if (t.type === 'income') { incomeLabel += t.amount; balance += t.amount; }
+    else { expenseLabel += t.amount; balance -= t.amount; }
   });
-  $('#sumIncome').textContent = '+' + fmtMoney(income);
-  $('#sumExpense').textContent = '-' + fmtMoney(expense);
-  $('#sumBalance').textContent = fmtMoney(income - expense + offBalance);
+  $('#sumIncome').textContent = '+' + fmtMoney(incomeLabel);
+  $('#sumExpense').textContent = '-' + fmtMoney(expenseLabel);
+  $('#sumBalance').textContent = fmtMoney(balance);
   renderPulse();
 }
 
